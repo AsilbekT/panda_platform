@@ -11,7 +11,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
-import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,11 +25,8 @@ SECRET_KEY = 'django-insecure-c$r8uxk(=f#g(^*ghlct$pp=q+h@67*dq@b49gykl4j66klqf1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = []
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://41f1-185-139-137-118.ngrok-free.app',
-]
 
 # Application definition
 
@@ -42,8 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'video_app',
-    'video_api'
+    'api'
 ]
 
 
@@ -86,17 +81,10 @@ WSGI_APPLICATION = 'catalog_service.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-# settings.py
-
 DATABASES = {
     'default': {
-        # Use 'postgresql' as database engine
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'catalogs',  # Use the name you've given to your PostgreSQL database
-        'USER': 'asilbek',  # Use your PostgreSQL username here
-        'PASSWORD': 'Asilbek2001',  # Use your PostgreSQL password here
-        'HOST': 'localhost',  # Set to the address where your PostgreSQL is hosted
-        'PORT': '',  # Leave as an empty string to use the default port
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -136,8 +124,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
