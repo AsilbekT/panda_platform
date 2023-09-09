@@ -1,7 +1,16 @@
 from django.contrib import admin
 from .models import Banner
 from django.utils.html import format_html
-from .models import Genre, Director, Movie, Series, Episode, Content, Banner, Catagory
+from .models import (
+    Genre,
+    Director,
+    Movie,
+    Series,
+    Episode,
+    Banner,
+    Catagory,
+    VideoConversionType
+)
 
 
 class GenreAdmin(admin.ModelAdmin):
@@ -64,3 +73,4 @@ admin.site.register(Movie, MovieAdmin)
 admin.site.register(Series, SeriesAdmin)
 admin.site.register(Episode, EpisodeAdmin)
 admin.site.register(Catagory)
+admin.site.register(VideoConversionType)

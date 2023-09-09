@@ -2,17 +2,20 @@ from django.http import JsonResponse
 from django.views import View
 import requests
 from django.core.files.storage import FileSystemStorage
-from django.http import JsonResponse
-from django.views import View
 from django.conf import settings
 import os
 
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
+from video_app.models import Content, VideoConversionType
+from django.core.exceptions import ObjectDoesNotExist
+from video_app.models import Movie, Series, Episode
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class VideoUploadView(View):
+
     def validate_token(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION', '').split()
         if len(auth_header) != 2 or auth_header[0].lower() != 'bearer':
@@ -33,6 +36,21 @@ class VideoUploadView(View):
 
         video = request.FILES.get('video')
         content_id = request.POST['content_id']
+        is_trailer = request.POST.get('is_trailer', 'false').lower() == 'true'
+        video_type = request.POST.get('video_type')
+        model_class = get_model_class(video_type)
+
+        if model_class is None:
+            return JsonResponse({'status': 'failed', 'message': 'Invalid video type.'})
+
+        try:
+            content = model_class.objects.get(pk=content_id)
+            video_type = content.conversion_type.video_type
+            if is_trailer:
+                video_type = f"{video_type}_TRAILER"
+        except ObjectDoesNotExist:
+            return JsonResponse({'status': 'failed', 'message': 'Content does not exist.'})
+
         if video:
             # Define a custom directory path relative to MEDIA_ROOT
             custom_directory_path = os.path.join(
@@ -48,14 +66,31 @@ class VideoUploadView(View):
 
             # Generate the URL to access the video
             full_file_path = os.path.join(fs.location, filename)
-            print(full_file_path)
-            data = {'status': 'success', 'message': 'Video uploaded',
-                    'video_url': full_file_path, "content_id": content_id}
+
+            data = {
+                'status': 'success',
+                'message': 'Video uploaded',
+                'video_url': full_file_path,
+                'content_id': content_id,
+                'video_type': video_type,
+            }
+
             response = requests.post(
-                "http://127.0.0.1:8000/convert", json=data)
+                "http://127.0.0.1:8001/convert", json=data)
             if response.status_code == 200:
                 return JsonResponse({'status': 'success', 'message': 'Video uploaded and conversion initiated', 'video_url': full_file_path})
             else:
                 return JsonResponse({'status': 'failed', 'message': f'Video uploaded but conversion failed. Response: {response.text}'})
 
         return JsonResponse({'status': 'failed', 'message': 'No video uploaded'})
+
+
+def get_model_class(video_type):
+    if video_type == 'MOVIE':
+        return Movie
+    elif video_type == 'SERIES':
+        return Series
+    elif video_type == 'EPISODE':
+        return Episode
+    else:
+        return None

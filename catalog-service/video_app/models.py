@@ -2,7 +2,26 @@ from django.db import models
 from .utils import validate_file_size, validate_image_file
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+
 # Model for storing different genres
+
+
+class VideoConversionType(models.Model):
+    VIDEO_TYPE_CHOICES = [
+        ('MOVIE', 'Movie'),
+        ('MOVIE_TRAILER', 'Movie Trailer'),
+        ('SERIES', 'Series'),
+        ('SERIES_TRAILER', 'Series Trailer'),
+    ]
+
+    video_type = models.CharField(
+        max_length=20, choices=VIDEO_TYPE_CHOICES, unique=True)
+
+    class Meta:
+        db_table = 'video_conversion_type_table'
+
+    def __str__(self):
+        return self.video_type
 
 
 class Genre(models.Model):
@@ -58,6 +77,7 @@ class Content(models.Model):
     is_ready = models.BooleanField(default=False)
     is_premiere = models.BooleanField(default=False)
     has_trailer = models.BooleanField(default=False)
+    is_free = models.BooleanField(default=False)
 
     class Meta:
         abstract = True
@@ -71,9 +91,11 @@ class Movie(Content):
     licensing_cost = models.FloatField(blank=True, null=True)
     is_featured = models.BooleanField(default=False)
     is_trending = models.BooleanField(default=False)
+    conversion_type = models.ForeignKey(
+        VideoConversionType, on_delete=models.SET_NULL, null=True, related_name='movies')
 
     class Meta(Content.Meta):
-        db_table = ''
+        db_table = 'movie_table'
 
     def __str__(self):
         return f"Movie: {self.title}"
@@ -85,6 +107,8 @@ class Series(Content):
     number_of_seasons = models.IntegerField(blank=True, null=True)
     is_featured = models.BooleanField(default=False)
     is_trending = models.BooleanField(default=False)
+    conversion_type = models.ForeignKey(
+        VideoConversionType, on_delete=models.SET_NULL, null=True, related_name='series')
 
     class Meta(Content.Meta):
         db_table = 'series_table'
