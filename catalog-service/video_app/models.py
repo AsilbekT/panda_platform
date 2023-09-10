@@ -117,10 +117,31 @@ class Series(Content):
         return f"Series: {self.title}"
 
 
+class Season(models.Model):
+    series = models.ForeignKey(
+        Series, related_name='seasons', on_delete=models.CASCADE)
+    season_number = models.IntegerField()
+    trailer_url = models.URLField(blank=True, null=True)
+    thumbnail_image = models.ImageField(
+        upload_to="season_thumbnail_image/",
+        blank=True,
+        null=True,
+        validators=[validate_file_size, validate_image_file]
+    )
+
+    class Meta:
+        db_table = 'season_table'
+        unique_together = (('series', 'season_number'),)
+
+    def __str__(self):
+        return f"Season {self.season_number} of {self.series.title}"
+
+
 class Episode(models.Model):
     series = models.ForeignKey(
         Series, related_name='episodes', on_delete=models.CASCADE)
-    season = models.IntegerField()
+    season = models.ForeignKey(
+        Season, related_name='episodes', on_delete=models.CASCADE)
     episode_number = models.IntegerField()
     title = models.CharField(max_length=255)
     duration_minute = models.IntegerField()
@@ -132,7 +153,7 @@ class Episode(models.Model):
         db_table = 'episode_table'
 
     def __str__(self):
-        return f"S{self.season}E{self.episode_number} - {self.title} of {self.series.title}"
+        return f"S{self.season.season_number}E{self.episode_number} - {self.title} of {self.series.title}"
 
 
 class Banner(models.Model):
@@ -147,7 +168,7 @@ class Banner(models.Model):
     )
     object_id = models.PositiveIntegerField(null=True, blank=True)
     content_object = GenericForeignKey('content_type', 'object_id')
-
+    is_movie = models.BooleanField(default=True)
     priority = models.IntegerField(default=0)
     status = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

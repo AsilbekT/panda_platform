@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Banner
+from .models import Banner, Season
 from django.utils.html import format_html
 from .models import (
     Genre,
@@ -65,8 +65,14 @@ class BannerAdmin(admin.ModelAdmin):
         return queryset
 
 
-admin.site.register(Banner, BannerAdmin)
+class SeasonAdmin(admin.ModelAdmin):
+    list_display = ('series', 'season_number', 'trailer_url')
+    search_fields = ('series__title', 'trailer_url')
+    list_filter = ('series',)
 
+
+admin.site.register(Season, SeasonAdmin)
+admin.site.register(Banner, BannerAdmin)
 admin.site.register(Genre, GenreAdmin)
 admin.site.register(Director, DirectorAdmin)
 admin.site.register(Movie, MovieAdmin)

@@ -1,5 +1,5 @@
 from video_app.utils import standardResponse
-from .models import Catagory, Genre, Director, Movie, Series, Episode, Banner
+from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner
 from rest_framework.views import APIView
 from .serializers import (
     CategorySerializer,
@@ -9,7 +9,12 @@ from .serializers import (
     HomeGenreSerializer,
     HomeMovieSerializer,
     HomeSeriesSerializer,
+    MovieDetailSerializer,
     MovieSerializer,
+    SeasonSerializer,
+    SeasonWithEpisodesSerializer,
+    SeriesDetailSerializer,
+    SeriesListSerializer,
     SeriesSerializer,
     EpisodeSerializer,
     BannerSerializer
@@ -31,12 +36,18 @@ class DirectorViewSet(BaseViewSet):
 
 class MovieViewSet(BaseViewSet):
     queryset = Movie.objects.all().order_by('id')
-    serializer_class = MovieSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return MovieSerializer
+        elif self.action == 'retrieve':
+            return MovieDetailSerializer
+        return MovieSerializer
 
     def list(self, request, *args, **kwargs):
         genre_from_param = self.request.query_params.get('genre', None)
         queryset = self.queryset.filter(
-            id=genre_from_param) if genre_from_param else self.queryset
+            genre_id=genre_from_param) if genre_from_param else self.queryset
 
         paginated_queryset, error_response = paginate_queryset(
             queryset, request)
@@ -44,31 +55,39 @@ class MovieViewSet(BaseViewSet):
             return error_response
 
         if paginated_queryset:
-            serializer = MovieSerializer(
+            serializer = self.get_serializer(
                 paginated_queryset, many=True, context={'request': request})
             return standardResponse(status="success", message="Movies retrieved", data=serializer.data)
         return standardResponse(status="error", message="No movies found", data={})
 
 
 class SeriesViewSet(BaseViewSet):
-    queryset = Series.objects.all().order_by('id')
     serializer_class = SeriesSerializer
 
-    def list(self, request, *args, **kwargs):
+    def get_queryset(self):
+        queryset = Series.objects.all().order_by('id')
         genre_from_param = self.request.query_params.get('genre', None)
-        queryset = self.queryset.filter(
-            id=genre_from_param) if genre_from_param else self.queryset
+        if genre_from_param:
+            queryset = queryset.filter(genre_id=genre_from_param)
+        return queryset
 
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return SeriesListSerializer  # For listing series with only necessary fields
+        elif self.action == 'retrieve':
+            return SeriesDetailSerializer  # For detailed view of a single series
+        return super().get_serializer_class()
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
         paginated_queryset, error_response = paginate_queryset(
             queryset, request)
         if error_response:
             return error_response
 
-        if paginated_queryset:
-            serializer = SeriesSerializer(
-                paginated_queryset, many=True, context={'request': request})
-            return standardResponse(status="success", message="Series retrieved", data=serializer.data)
-        return standardResponse(status="error", message="No series found", data={})
+        serializer = self.get_serializer(
+            paginated_queryset, many=True, context={'request': request})
+        return standardResponse(status="success", message="Series retrieved", data=serializer.data)
 
 
 class EpisodeViewSet(BaseViewSet):
@@ -80,15 +99,28 @@ class EpisodeViewSet(BaseViewSet):
             series_id=series_id) if series_id else self.queryset
 
         paginated_queryset, error_response = paginate_queryset(
-            queryset, request)
+            queryset, request
+        )
         if error_response:
             return error_response
 
         if paginated_queryset:
             serializer = EpisodeSerializer(
-                paginated_queryset, many=True, context={'request': request})
+                paginated_queryset, many=True, context={'request': request}
+            )
             return standardResponse(status="success", message="Episodes retrieved", data=serializer.data)
         return standardResponse(status="error", message="No episodes found", data={})
+
+
+class SeasonViewSet(BaseViewSet):
+    queryset = Season.objects.all().order_by('season_number')
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return SeasonSerializer
+        elif self.action == 'retrieve':
+            return SeasonWithEpisodesSerializer
+        return SeasonSerializer
 
 
 class HomeAPIView(APIView):

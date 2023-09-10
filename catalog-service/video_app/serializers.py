@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Catagory, Genre, Director, Movie, Series, Episode, Banner
+from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -15,6 +15,22 @@ class DirectorSerializer(serializers.ModelSerializer):
 
 
 class MovieSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(read_only=True)
+
+    class Meta:
+        model = Movie
+        fields = [
+            'id', 'title', 'release_date', 'genre', 'is_free',
+            'is_premiere', 'trailer_url', 'main_content_url', 'thumbnail_image'
+        ]
+
+    def get_thumbnail_image(self, obj):
+        request = self.context.get('request')
+        thumbnail_image_url = obj.thumbnail_image.url
+        return request.build_absolute_uri(thumbnail_image_url)
+
+
+class MovieDetailSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(read_only=True)
     director = DirectorSerializer(read_only=True)
     thumbnail_image = serializers.SerializerMethodField()
@@ -33,10 +49,52 @@ class SeriesSerializer(serializers.ModelSerializer):
     genre = GenreSerializer(read_only=True)
     director = DirectorSerializer(read_only=True)
     thumbnail_image = serializers.SerializerMethodField()
+    seasons = serializers.SerializerMethodField()
 
     class Meta:
         model = Series
         fields = '__all__'
+
+    def get_thumbnail_image(self, obj):
+        request = self.context.get('request')
+        thumbnail_image_url = obj.thumbnail_image.url
+        return request.build_absolute_uri(thumbnail_image_url)
+
+    def get_seasons(self, obj):
+        seasons = Season.objects.filter(series=obj)
+        return SeasonSerializer(seasons, many=True, context=self.context).data
+
+
+class SeriesDetailSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(read_only=True)
+    director = DirectorSerializer(read_only=True)
+    thumbnail_image = serializers.SerializerMethodField()
+    seasons = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Series
+        fields = '__all__'
+
+    def get_thumbnail_image(self, obj):
+        request = self.context.get('request')
+        thumbnail_image_url = obj.thumbnail_image.url
+        return request.build_absolute_uri(thumbnail_image_url)
+
+    def get_seasons(self, obj):
+        seasons = Season.objects.filter(series=obj)
+        return SeasonSerializer(seasons, many=True, context=self.context).data
+
+
+class SeriesListSerializer(serializers.ModelSerializer):
+    genre = GenreSerializer(read_only=True)
+    thumbnail_image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Series
+        fields = [
+            'id', 'title', 'release_date', 'genre', 'is_free',
+            'is_premiere', 'trailer_url', 'series_summary_url', 'thumbnail_image'
+        ]
 
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
@@ -56,11 +114,31 @@ class EpisodeSerializer(serializers.ModelSerializer):
             'episode_number',
             'title',
             'duration_minute',
-            'main_content_url',
+            'episode_content_url',
             'thumbnail_image_url',
             'series_description',
             'series_genre_name'
         ]
+
+
+class SeasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Season
+        fields = ['id', 'season_number', 'trailer_url',
+                  'thumbnail_image']
+
+
+class SeasonWithEpisodesSerializer(serializers.ModelSerializer):
+    episodes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Season
+        fields = ['id', 'season_number', 'trailer_url',
+                  'thumbnail_image', 'episodes']
+
+    def get_episodes(self, obj):
+        episodes = Episode.objects.filter(season=obj)
+        return EpisodeSerializer(episodes, many=True, context=self.context).data
 
 
 class BannerSerializer(serializers.ModelSerializer):
@@ -76,8 +154,13 @@ class BannerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Banner
-        fields = ['id', 'name', 'is_premiere', 'content_type', 'object_id', 'trailer_url', 'thumbnail_image_url',
-                  'content_title', 'release_year', 'rating', 'priority', 'status', 'created_at', 'updated_at']
+        fields = [
+            'id', 'name', 'is_premiere',
+            'content_type', 'object_id', 'trailer_url',
+            'thumbnail_image_url', 'content_title', 'release_year',
+            'rating', 'priority', 'status',
+            'created_at', 'updated_at', 'is_movie'
+        ]
 
 
 class HomeAPIBannerSerializer(serializers.ModelSerializer):
