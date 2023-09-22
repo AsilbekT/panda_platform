@@ -56,8 +56,8 @@ class Content(models.Model):
     description = models.TextField(blank=True, null=True)
     category = models.ForeignKey(
         Catagory, on_delete=models.CASCADE, related_name="%(class)s_catagory", null=True, blank=True)
-    genre = models.ForeignKey(
-        Genre, on_delete=models.CASCADE, related_name="%(class)s_contents")
+    genre = models.ManyToManyField(
+        Genre, related_name="%(class)s_contents")
     release_date = models.DateField(blank=True, null=True)
     duration_minute = models.IntegerField()
     director = models.ForeignKey(

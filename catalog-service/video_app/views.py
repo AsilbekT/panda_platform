@@ -22,6 +22,7 @@ from .serializers import (
 from .base_view import BaseViewSet
 from video_app.utils import paginate_queryset
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
 
 
 class GenreViewSet(BaseViewSet):
@@ -123,77 +124,48 @@ class SeasonViewSet(BaseViewSet):
         return SeasonSerializer
 
 
-class HomeAPIView(APIView):
-    def get_content_by_category(self, request):
-        categories = Catagory.objects.all()
-        category_data = {}
+class CategoryViewSet(BaseViewSet):
+    serializer_class = CategorySerializer  # Add this line
 
-        for category in categories:
+    def list(self, request, *args, **kwargs):
+        try:
+            categories = Catagory.objects.all()
+            category_serializer = CategorySerializer(
+                categories, many=True, context={'request': request})
+
+            # Aggregate data
+            data = {
+                "categories": category_serializer.data,
+            }
+
+            return standardResponse(status="success", message="Data retrieved", data=data)
+        except Exception as e:
+            return standardResponse(status="error", message=str(e), data={})
+
+    @action(detail=True, methods=['GET'])
+    def content(self, request, pk=None):
+        try:
+            category = Catagory.objects.get(id=pk)
+
+            # Fetch movies and series related to this category
             movies = Movie.objects.filter(category=category)
             series = Series.objects.filter(category=category)
+
+            # Serialize movies and series
             movie_serializer = HomeMovieSerializer(
                 movies, many=True, context={'request': request})
-            series_serializer = HomeSeriesSerializer(
+            series_serializer = SeriesListSerializer(
                 series, many=True, context={'request': request})
 
-            category_data[category.name] = {
+            # Aggregate data
+            data = {
                 "movies": movie_serializer.data,
                 "series": series_serializer.data
             }
 
-        return category_data
-
-    def get(self, request, *args, **kwargs):
-        try:
-
-            # Get featured movies
-            featured_movies = Movie.objects.filter(
-                is_featured=True).order_by("id")
-            paginated_movies, error_response = paginate_queryset(
-                featured_movies, request)
-            if error_response:
-                return error_response
-            movie_serializer = HomeMovieSerializer(
-                paginated_movies, many=True, context={'request': request})
-
-            # Get featured series
-            featured_series = Series.objects.filter(
-                is_featured=True).order_by("id")
-            paginated_series, error_response = paginate_queryset(
-                featured_series, request)
-            if error_response:
-                return error_response
-            series_serializer = HomeSeriesSerializer(
-                paginated_series, many=True, context={'request': request})
-
-            # Get all genres
-            genres = Genre.objects.all()
-            genre_serializer = GenreSerializer(
-                genres, many=True, context={'request': request})
-
-            category_data = self.get_content_by_category(request=request)
-            # Get top directors (you might need to add a method to filter top directors)
-            top_directors = Director.objects.all()[:5]
-
-            director_serializer = DirectorSerializer(
-                top_directors, many=True, context={'request': request})
-
-            # Get banners (new addition)
-            banners = Banner.objects.filter(status=True)
-            banner_serializer = HomeAPIBannerSerializer(
-                banners, many=True, context={'request': request})
-
-            # Aggregate data
-            data = {
-                "featured_movies": movie_serializer.data,
-                "featured_series": series_serializer.data,
-                "genres": genre_serializer.data,
-                "top_directors": director_serializer.data,
-                "categories": category_data,
-                "banners": banner_serializer.data  # new addition
-            }
-
             return standardResponse(status="success", message="Data retrieved", data=data)
+        except Catagory.DoesNotExist:
+            return standardResponse(status="error", message="Category not found", data={})
         except Exception as e:
             return standardResponse(status="error", message=str(e), data={})
 

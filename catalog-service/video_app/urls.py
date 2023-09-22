@@ -8,7 +8,7 @@ from .views import (
     SeriesViewSet,
     SeasonViewSet,  # make sure to create this ViewSet
     EpisodeViewSet,
-    HomeAPIView,
+    CategoryViewSet,
     BannerViewSet
 )
 
@@ -19,6 +19,7 @@ router.register(r'directors', DirectorViewSet, basename="directors")
 router.register(r'movies', MovieViewSet, basename="movies")
 router.register(r'series', SeriesViewSet, basename="series")
 router.register(r'banners', BannerViewSet, basename='banners')
+router.register(r'category', CategoryViewSet, basename='category')
 
 series_router = routers.NestedDefaultRouter(router, r'series', lookup='series')
 # series/{series_id}/seasons/
@@ -35,5 +36,4 @@ urlpatterns = [
     path('', include(router.urls)),
     path('', include(series_router.urls)),
     path('', include(seasons_router.urls)),
-    path('homeapi/', HomeAPIView.as_view(), name='home-api-view'),
 ]

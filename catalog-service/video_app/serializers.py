@@ -15,7 +15,7 @@ class DirectorSerializer(serializers.ModelSerializer):
 
 
 class MovieSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
 
     class Meta:
         model = Movie
@@ -31,7 +31,7 @@ class MovieSerializer(serializers.ModelSerializer):
 
 
 class MovieDetailSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
     director = DirectorSerializer(read_only=True)
     thumbnail_image = serializers.SerializerMethodField()
 
@@ -46,7 +46,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
 
 
 class SeriesSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
     director = DirectorSerializer(read_only=True)
     thumbnail_image = serializers.SerializerMethodField()
     seasons = serializers.SerializerMethodField()
@@ -66,7 +66,7 @@ class SeriesSerializer(serializers.ModelSerializer):
 
 
 class SeriesDetailSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
     director = DirectorSerializer(read_only=True)
     thumbnail_image = serializers.SerializerMethodField()
     seasons = serializers.SerializerMethodField()
@@ -86,14 +86,14 @@ class SeriesDetailSerializer(serializers.ModelSerializer):
 
 
 class SeriesListSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
     thumbnail_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Series
         fields = [
             'id', 'title', 'release_date', 'genre', 'is_free',
-            'is_premiere', 'trailer_url', 'series_summary_url', 'thumbnail_image'
+            'is_premiere', 'series_summary_url', 'thumbnail_image', 'description'
         ]
 
     def get_thumbnail_image(self, obj):
@@ -147,6 +147,9 @@ class BannerSerializer(serializers.ModelSerializer):
         read_only=True)
     content_title = serializers.CharField(
         read_only=True)
+    content_genre = GenreSerializer(
+        source='content_object.genre', many=True, read_only=True)
+    description = serializers.SerializerMethodField()
     release_year = serializers.IntegerField(
         read_only=True)
     rating = serializers.FloatField(read_only=True)
@@ -156,11 +159,15 @@ class BannerSerializer(serializers.ModelSerializer):
         model = Banner
         fields = [
             'id', 'name', 'is_premiere',
-            'content_type', 'object_id', 'trailer_url',
+            'content_type', 'object_id', 'content_genre', 'trailer_url',
             'thumbnail_image_url', 'content_title', 'release_year',
-            'rating', 'priority', 'status',
+            'rating', 'priority', 'status', 'description',
             'created_at', 'updated_at', 'is_movie'
         ]
+
+    def get_description(self, obj):
+        content_object = obj.content_object
+        return getattr(content_object, 'description', None) if content_object else None
 
 
 class HomeAPIBannerSerializer(serializers.ModelSerializer):
@@ -186,7 +193,7 @@ class HomeAPIBannerSerializer(serializers.ModelSerializer):
 
 
 class HomeMovieSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
     director = DirectorSerializer(read_only=True)
     thumbnail_image = serializers.SerializerMethodField()
     year = serializers.CharField(read_only=True)
@@ -195,8 +202,8 @@ class HomeMovieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Movie
-        fields = ['id', 'genre', 'director',
-                  'thumbnail_image', 'year', 'title', 'is_premiere']
+        fields = ['id', 'genre', 'director', 'rating',
+                  'thumbnail_image', 'year', 'title', 'is_premiere', 'description', 'trailer_url']
 
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
@@ -205,7 +212,7 @@ class HomeMovieSerializer(serializers.ModelSerializer):
 
 
 class HomeSeriesSerializer(serializers.ModelSerializer):
-    genre = GenreSerializer(read_only=True)
+    genre = GenreSerializer(many=True, read_only=True)
     director = DirectorSerializer(read_only=True)
     thumbnail_image = serializers.SerializerMethodField()
     year = serializers.CharField(read_only=True)
@@ -214,7 +221,7 @@ class HomeSeriesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Movie
-        fields = ['id', 'genre', 'director',
+        fields = ['id', 'genre', 'director', 'rating',
                   'thumbnail_image', 'year', 'title', 'is_premiere']
 
     def get_thumbnail_image(self, obj):
