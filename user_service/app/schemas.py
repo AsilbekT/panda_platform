@@ -5,6 +5,7 @@ from typing import Optional, Any
 
 
 class UserProfileCreate(BaseModel):
+    id: Optional(int) = None
     phone_number: Optional[str] = None
     name: Optional[str] = None
     username: Optional[str] = None
