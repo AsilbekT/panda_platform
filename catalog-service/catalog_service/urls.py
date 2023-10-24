@@ -28,6 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('video_api.urls')),
     path('', include('video_app.urls')),
+    path('', include('video_search.urls')),
 ]
 
 if settings.DEBUG:

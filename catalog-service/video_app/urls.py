@@ -9,7 +9,8 @@ from .views import (
     SeasonViewSet,  # make sure to create this ViewSet
     EpisodeViewSet,
     CategoryViewSet,
-    BannerViewSet
+    BannerViewSet,
+    SubscriptionPlanView
 )
 
 router = DefaultRouter()
@@ -20,6 +21,7 @@ router.register(r'movies', MovieViewSet, basename="movies")
 router.register(r'series', SeriesViewSet, basename="series")
 router.register(r'banners', BannerViewSet, basename='banners')
 router.register(r'category', CategoryViewSet, basename='category')
+router.register(r'plans', SubscriptionPlanView, basename='plans')
 
 series_router = routers.NestedDefaultRouter(router, r'series', lookup='series')
 # series/{series_id}/seasons/

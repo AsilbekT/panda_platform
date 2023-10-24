@@ -28,9 +28,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://41f1-185-139-137-118.ngrok-free.app',
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     'https://41f1-185-139-137-118.ngrok-free.app',
+# ]
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 # Application definition
 
@@ -43,7 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'video_app',
-    'video_api'
+    'video_api',
+    'corsheaders',
+    'video_search'
 ]
 
 
@@ -57,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

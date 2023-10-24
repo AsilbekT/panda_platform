@@ -1,14 +1,10 @@
 from video_app.utils import standardResponse
-from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner
-from rest_framework.views import APIView
+from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan
 from .serializers import (
     CategorySerializer,
     GenreSerializer,
     DirectorSerializer,
-    HomeAPIBannerSerializer,
-    HomeGenreSerializer,
     HomeMovieSerializer,
-    HomeSeriesSerializer,
     MovieDetailSerializer,
     MovieSerializer,
     SeasonSerializer,
@@ -17,7 +13,8 @@ from .serializers import (
     SeriesListSerializer,
     SeriesSerializer,
     EpisodeSerializer,
-    BannerSerializer
+    BannerSerializer,
+    SubscriptionPlanSerializer
 )
 from .base_view import BaseViewSet
 from video_app.utils import paginate_queryset
@@ -173,3 +170,8 @@ class CategoryViewSet(BaseViewSet):
 class BannerViewSet(BaseViewSet):
     queryset = Banner.objects.filter(status=True)
     serializer_class = BannerSerializer
+
+
+class SubscriptionPlanView(BaseViewSet):
+    queryset = SubscriptionPlan.objects.all()
+    serializer_class = SubscriptionPlanSerializer

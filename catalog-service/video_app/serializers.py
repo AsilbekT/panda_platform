@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner
+from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -20,8 +20,8 @@ class MovieSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
         fields = [
-            'id', 'title', 'release_date', 'genre', 'is_free',
-            'is_premiere', 'trailer_url', 'main_content_url', 'thumbnail_image'
+            'id', 'title', 'release_date', 'genre', 'is_free', 'rating',
+            'is_premiere', 'trailer_url', 'thumbnail_image'
         ]
 
     def get_thumbnail_image(self, obj):
@@ -243,3 +243,9 @@ class HomeGenreSerializer(serializers.ModelSerializer):
     class Meta:
         model = Genre
         fields = ['id', 'name', 'movies', 'series']
+
+
+class SubscriptionPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubscriptionPlan
+        fields = ['name', 'price', 'duration_days']

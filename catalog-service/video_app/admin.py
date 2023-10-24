@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Banner, Season
 from django.utils.html import format_html
+from django.contrib import admin, messages
 from .models import (
     Genre,
     Director,
@@ -9,8 +10,15 @@ from .models import (
     Episode,
     Banner,
     Catagory,
-    VideoConversionType
+    VideoConversionType,
+    SubscriptionPlan
 )
+
+
+class SubscriptionPlanAdmin(admin.ModelAdmin):
+    list_display = ['name', 'price', 'duration_days']
+    search_fields = ['name']
+    list_filter = ['price']
 
 
 class GenreAdmin(admin.ModelAdmin):
@@ -23,12 +31,25 @@ class DirectorAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
+# class SubscriptionPlanInline(admin.TabularInline):
+#     model = SubscriptionPlan
+#     extra = 1
+
+
 class ContentAdmin(admin.ModelAdmin):
     list_display = ('title', 'release_date', 'is_ready',
                     'is_premiere', 'has_trailer')
     search_fields = ('title', 'release_date')
     list_filter = ('is_ready', 'is_premiere', 'has_trailer')
     ordering = ('release_date',)
+
+    def save_model(self, request, obj, form, change):
+        if obj.is_free and obj.available_under_plans.exists():
+            messages.set_level(request, messages.ERROR)
+            messages.error(
+                request, "Free content should not have any associated subscription plans.")
+        else:
+            super().save_model(request, obj, form, change)
 
 
 class MovieAdmin(ContentAdmin):
@@ -78,5 +99,6 @@ admin.site.register(Director, DirectorAdmin)
 admin.site.register(Movie, MovieAdmin)
 admin.site.register(Series, SeriesAdmin)
 admin.site.register(Episode, EpisodeAdmin)
+admin.site.register(SubscriptionPlan, SubscriptionPlanAdmin)
 admin.site.register(Catagory)
 admin.site.register(VideoConversionType)
