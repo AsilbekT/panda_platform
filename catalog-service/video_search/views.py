@@ -10,15 +10,11 @@ class GeneralSearch(APIView):
         query = request.GET.get('q', '')
 
         movies = Movie.objects.filter(
-            Q(title__icontains=query) |
-            Q(genre__name__icontains=query) |
-            Q(director__name__icontains=query)
+            Q(title__icontains=query)
         ).distinct()
 
         series = Series.objects.filter(
-            Q(title__icontains=query) |
-            Q(genre__name__icontains=query) |
-            Q(director__name__icontains=query)
+            Q(title__icontains=query)
         ).distinct()
 
         # Serialize the data
