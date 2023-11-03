@@ -4,12 +4,14 @@ from .models import UserSubscription, SubscriptionPlan
 
 # Serializer for SubscriptionPlan model
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
-    
+
     class Meta:
         model = SubscriptionPlan
-        fields = ['name', 'price', 'duration_days']
+        fields = ['id', 'name', 'price', 'duration_days']
 
 # Serializer for UserSubscription model
+
+
 class UserSubscriptionSerializer(serializers.ModelSerializer):
     subscription_plan = SubscriptionPlanSerializer(read_only=True)
 

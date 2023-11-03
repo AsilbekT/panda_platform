@@ -1,7 +1,8 @@
-from video_app.utils import standardResponse
-from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan
+from video_app.utils import standardResponse, user_has_active_plan
+from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription
 from .serializers import (
     CategorySerializer,
+    EpisodeSerializerDetails,
     GenreSerializer,
     DirectorSerializer,
     HomeMovieSerializer,
@@ -14,7 +15,8 @@ from .serializers import (
     SeriesSerializer,
     EpisodeSerializer,
     BannerSerializer,
-    SubscriptionPlanSerializer
+    SubscriptionPlanSerializer,
+    UserSubscriptionSerializer
 )
 from .base_view import BaseViewSet
 from video_app.utils import paginate_queryset
@@ -34,6 +36,7 @@ class DirectorViewSet(BaseViewSet):
 
 class MovieViewSet(BaseViewSet):
     queryset = Movie.objects.all().order_by('id')
+    # check_user_subscriptions()
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -90,7 +93,13 @@ class SeriesViewSet(BaseViewSet):
 
 class EpisodeViewSet(BaseViewSet):
     queryset = Episode.objects.all().order_by('series', 'season', 'episode_number')
-    serializer_class = EpisodeSerializer
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return EpisodeSerializer
+        elif self.action == 'retrieve':
+            return EpisodeSerializerDetails
+        return EpisodeSerializer
 
     def list(self, request, series_id=None, *args, **kwargs):
         queryset = self.queryset.filter(
@@ -122,7 +131,7 @@ class SeasonViewSet(BaseViewSet):
 
 
 class CategoryViewSet(BaseViewSet):
-    serializer_class = CategorySerializer  # Add this line
+    serializer_class = CategorySerializer
 
     def list(self, request, *args, **kwargs):
         try:
@@ -175,3 +184,11 @@ class BannerViewSet(BaseViewSet):
 class SubscriptionPlanView(BaseViewSet):
     queryset = SubscriptionPlan.objects.all()
     serializer_class = SubscriptionPlanSerializer
+
+
+class UserSubscriptionViewSet(BaseViewSet):
+    """
+    API endpoint that allows UserSubscriptions to be viewed or edited.
+    """
+    queryset = UserSubscription.objects.all().order_by('-start_date')
+    serializer_class = UserSubscriptionSerializer

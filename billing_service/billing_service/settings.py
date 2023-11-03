@@ -27,13 +27,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8080",  # Or your frontend server
+    "http://localhost:8080",
+    "https://1631-213-230-118-141.ngrok-free.app"  # Or your frontend server
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",  # Or your frontend server
     "http://localhost:8000",  # Or your frontend server
-    # "https://yourfrontenddomain.com",
+    "https://1631-213-230-118-141.ngrok-free.app",
 ]
 
 # Application definition
@@ -61,7 +62,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+CORS_ALLOW_ALL_ORIGINS = True
 ROOT_URLCONF = 'billing_service.urls'
 
 TEMPLATES = [

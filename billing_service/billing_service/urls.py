@@ -17,7 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from subscription_plans.views import CompleteClickPaymentView, PrepareClickPaymentView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('billing/', include("subscription_plans.urls"))
+    path('billing/', include("subscription_plans.urls")),
+    path('prepare/', PrepareClickPaymentView.as_view(), name='prepare_click_payment'),
+    path('complete/', CompleteClickPaymentView.as_view(), name='complete_click_payment'),
+
 ]

@@ -10,7 +10,8 @@ from .views import (
     EpisodeViewSet,
     CategoryViewSet,
     BannerViewSet,
-    SubscriptionPlanView
+    SubscriptionPlanView,
+    UserSubscriptionViewSet
 )
 
 router = DefaultRouter()
@@ -33,6 +34,7 @@ seasons_router = routers.NestedDefaultRouter(
 # series/{series_id}/seasons/{season_id}/episodes/
 seasons_router.register(r'episodes', EpisodeViewSet,
                         basename='seasons-episodes')
+router.register(r'subscriptions', UserSubscriptionViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

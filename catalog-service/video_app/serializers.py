@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan
+from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -103,6 +103,24 @@ class SeriesListSerializer(serializers.ModelSerializer):
 
 
 class EpisodeSerializer(serializers.ModelSerializer):
+    series_description = serializers.ReadOnlyField(source='series.description')
+    series_genre_name = serializers.ReadOnlyField(source='series.genre.name')
+
+    class Meta:
+        model = Episode
+        fields = [
+            'series',
+            'season',
+            'episode_number',
+            'title',
+            'duration_minute',
+            'thumbnail_image_url',
+            'series_description',
+            'series_genre_name'
+        ]
+
+
+class EpisodeSerializerDetails(serializers.ModelSerializer):
     series_description = serializers.ReadOnlyField(source='series.description')
     series_genre_name = serializers.ReadOnlyField(source='series.genre.name')
 
@@ -249,3 +267,10 @@ class SubscriptionPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPlan
         fields = ['name', 'price', 'duration_days']
+
+
+class UserSubscriptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSubscription
+        fields = ['user_id', 'username', 'subscription_plan_name',
+                  'start_date', 'end_date', 'status']

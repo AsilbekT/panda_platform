@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 from .utils import validate_file_size, validate_image_file
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -226,3 +227,30 @@ class Banner(models.Model):
     @property
     def is_premiere(self):
         return getattr(self.content_object, 'is_premiere', None)
+
+
+class UserSubscription(models.Model):
+    STATUS_CHOICES = [
+        ('Active', 'Active'),
+        ('Paused', 'Paused'),
+        ('Exhausted', 'Exhausted'),
+        ('Expired', 'Expired'),
+    ]
+
+    user_id = models.IntegerField(unique=True)
+    username = models.CharField(max_length=200, unique=True)
+    subscription_plan_name = models.CharField(max_length=50)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(
+        max_length=50, choices=STATUS_CHOICES, default='Active')
+
+    def __str__(self):
+        return f"{self.username}'s Subscription to {self.subscription_plan_name}"
+
+    @property
+    def is_active(self):
+        """
+        Determines if the subscription is currently active.
+        """
+        return self.status == 'Active' and self.start_date <= timezone.now().date() <= self.end_date

@@ -1,7 +1,12 @@
+import requests
 from rest_framework.response import Response
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from PIL import Image
+# from .models import SubscriptionPlan
+
+
+BILLING_SERVICE_URL = "http://127.0.0.1:8001/"
 
 
 def standardResponse(status, message, data=None):
@@ -41,3 +46,15 @@ def validate_image_file(value):
         image.verify()
     except:
         raise ValidationError("Invalid image format")
+
+
+def user_has_active_plan(username, token):
+    headers = {
+        'Authorization': f'Bearer {token}'
+    }
+    response = requests.get(BILLING_SERVICE_URL +
+                            f'billing/{username}/subscriptions/', headers=headers)
+
+    if response.status_code == 200:
+        return True
+    return False
