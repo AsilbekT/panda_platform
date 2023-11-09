@@ -48,7 +48,12 @@ class SubscriptionPlanListView(View):
         except SubscriptionPlan.DoesNotExist:
             return JsonResponse({"error": "Plan does not exist"}, status=400)
 
-        user_billing = BillingInfo.objects.get(user_id=user_id)
+        user_billing, created = BillingInfo.objects.get_or_create(
+            user_id=user_id,
+            defaults={
+                'payment_reference': 'Default_Payment_Reference'
+            }
+        )
         transaction_id = str(uuid.uuid4())
 
         transaction = PaymentTransaction.objects.create(
@@ -59,11 +64,9 @@ class SubscriptionPlanListView(View):
             transaction_id=transaction_id
         )
 
-        # Generate the payment URL
         payment_url = create_click_payment_url(
             user_id, transaction.id, plan.price)
         payment_url += f"{transaction.id}"
-        # Return the payment URL to the frontend
         return JsonResponse({"paymentUrl": payment_url})
 
 
@@ -147,24 +150,18 @@ class PrepareClickPaymentView(View):
             merchant_trans_id = query_dict.get('merchant_trans_id')
             amount = query_dict.get('amount')
 
-            # Here you would typically check if the transaction ID and the amount are correct.
-            # For example:
-            # Check if the transaction exists and the amount matches
             payment_transaction = PaymentTransaction.objects.get(
                 id=merchant_trans_id
             )
 
-            # Check if the transaction is not already processed or prepared
             if payment_transaction.status not in ['Initiated', 'Prepared']:
                 return JsonResponse({
                     'error': 1,
                     'error_note': 'Invalid transaction status'
                 }, status=400)
 
-            # Generate a unique merchant transaction ID
             merchant_prepare_id = generate_merchant_prepare_id()
 
-            # Update the transaction status to 'Prepared'
             payment_transaction.merchant_prepare_id = merchant_prepare_id
             payment_transaction.status = 'Prepared'
             payment_transaction.save()
@@ -201,23 +198,19 @@ class CompleteClickPaymentView(View):
             amount = payment_data.get('amount')
             merchant_confirm_id = generate_merchant_confirm_id()
 
-            # Validate the presence of all required parameters
             if not all([click_trans_id, merchant_trans_id, amount]):
                 return JsonResponse({'error': 1, 'message': 'Missing required parameters'}, status=400)
-            # Retrieve the payment transaction
+
             payment_transaction = PaymentTransaction.objects.get(
                 id=merchant_trans_id)
 
-            # If the payment is confirmed successfully:
             billing_info_id = payment_transaction.user_id
             plan_id = payment_transaction.plan_id
 
-            # Process the payment and create subscription and transaction history
             success, message = SubscriptionService.process_payment(
                 billing_info_id, plan_id, amount, payment_transaction.id)
             if success:
 
-                # Update the payment transaction status
                 payment_transaction.status = 'Completed'
                 payment_transaction.completed_at = timezone.now()
                 payment_transaction.merchant_confirm_id = merchant_confirm_id
