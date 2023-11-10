@@ -266,11 +266,11 @@ class HomeGenreSerializer(serializers.ModelSerializer):
 class SubscriptionPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = SubscriptionPlan
-        fields = ['name', 'price', 'duration_days']
+        fields = ['id', 'name', 'price', 'duration_days']
 
 
 class UserSubscriptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSubscription
-        fields = ['user_id', 'username', 'subscription_plan_name',
+        fields = ['id', 'user_id', 'username', 'subscription_plan_name',
                   'start_date', 'end_date', 'status']

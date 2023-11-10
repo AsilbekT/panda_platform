@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Banner, Season
+from .models import Banner, Season, UserSubscription
 from django.utils.html import format_html
 from django.contrib import admin, messages
 from .models import (
@@ -102,3 +102,4 @@ admin.site.register(Episode, EpisodeAdmin)
 admin.site.register(SubscriptionPlan, SubscriptionPlanAdmin)
 admin.site.register(Catagory)
 admin.site.register(VideoConversionType)
+admin.site.register(UserSubscription)
