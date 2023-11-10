@@ -12,6 +12,7 @@ from django.db.models.signals import post_save, post_delete
 
 class SubscriptionPlan(models.Model):
     name = models.CharField(max_length=50)
+    description = models.TextField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     duration_days = models.IntegerField()
     max_streams = models.IntegerField()
