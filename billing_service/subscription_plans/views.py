@@ -38,37 +38,6 @@ class SubscriptionPlanListView(View):
                       "price": str(plan.price)} for plan in plans]
         return JsonResponse(plan_data, safe=False)
 
-    def post(self, request):
-        data = json.loads(request.body.decode('utf-8'))
-        user_id = data.get('user_id')
-        plan_id = data.get('plan_id')
-
-        try:
-            plan = SubscriptionPlan.objects.get(pk=plan_id)
-        except SubscriptionPlan.DoesNotExist:
-            return JsonResponse({"error": "Plan does not exist"}, status=400)
-
-        user_billing, created = BillingInfo.objects.get_or_create(
-            user_id=user_id,
-            defaults={
-                'payment_reference': 'Default_Payment_Reference'
-            }
-        )
-        transaction_id = str(uuid.uuid4())
-
-        transaction = PaymentTransaction.objects.create(
-            user=user_billing,
-            plan=plan,
-            status='Initiated',
-            amount=plan.price,
-            transaction_id=transaction_id
-        )
-
-        payment_url = create_click_payment_url(
-            user_id, transaction.id, plan.price)
-        payment_url += f"{transaction.id}"
-        return JsonResponse({"paymentUrl": payment_url})
-
 
 @method_decorator(csrf_exempt, name='dispatch')
 class PaymentUrlView(View):
