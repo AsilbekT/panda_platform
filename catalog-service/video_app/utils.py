@@ -22,27 +22,21 @@ def standardResponse(status, message, data, pagination=None):
 
 
 def paginate_queryset(queryset, request):
-    page_number = request.query_params.get('page', 1)
-    page_size = request.query_params.get('size', 10)
+    page_number = int(request.query_params.get('page', 1))
+    page_size = int(request.query_params.get('size', 10))
 
     paginator = Paginator(queryset, page_size)
-
     try:
         paginated_queryset = paginator.page(page_number)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        paginated_queryset = paginator.page(1)
-        page_number = 1
     except EmptyPage:
-        # If page is out of range, deliver last page of results.
-        paginated_queryset = paginator.page(paginator.num_pages)
-        page_number = paginator.num_pages
+        return [], standardResponse(status="error", message="Invalid page number.", data={})
+    except PageNotAnInteger:
+        return [], standardResponse(status="error", message="Page number is not an integer.", data={})
 
-    # Create pagination response
     pagination_data = {
         'total': paginator.count,
         'page_size': page_size,
-        'current_page': int(page_number),
+        'current_page': page_number,
         'total_pages': paginator.num_pages,
         'next': paginated_queryset.has_next(),
         'previous': paginated_queryset.has_previous(),
