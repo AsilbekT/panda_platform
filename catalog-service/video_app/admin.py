@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Banner, Season, UserSubscription
+from .models import Banner, FavoriteContent, Season, UserSubscription
 from django.utils.html import format_html
 from django.contrib import admin, messages
 from .models import (
@@ -91,6 +91,17 @@ class SeasonAdmin(admin.ModelAdmin):
     search_fields = ('series__title', 'trailer_url')
     list_filter = ('series',)
 
+
+class FavoriteContentAdmin(admin.ModelAdmin):
+    list_display = ('username', 'content_object_display')
+
+    def content_object_display(self, obj):
+        return obj.content_object
+    content_object_display.short_description = 'Content'
+
+
+# Register your models here.
+admin.site.register(FavoriteContent, FavoriteContentAdmin)
 
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Banner, BannerAdmin)

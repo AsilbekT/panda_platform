@@ -255,3 +255,16 @@ class UserSubscription(models.Model):
         Determines if the subscription is currently active.
         """
         return self.status == 'Active' and self.start_date <= timezone.now().date() <= self.end_date
+
+
+class FavoriteContent(models.Model):
+    username = models.CharField(max_length=200)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        unique_together = ('username', 'content_type', 'object_id')
+
+    def __str__(self):
+        return f"{self.username}'s favorite {self.content_object.title}"

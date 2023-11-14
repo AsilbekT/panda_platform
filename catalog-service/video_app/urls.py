@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 from .views import (
+    FavoriteContentViewSet,
     GenreViewSet,
     DirectorViewSet,
     MovieViewSet,
@@ -35,6 +36,7 @@ seasons_router = routers.NestedDefaultRouter(
 seasons_router.register(r'episodes', EpisodeViewSet,
                         basename='seasons-episodes')
 router.register(r'subscriptions', UserSubscriptionViewSet)
+router.register(r'user-favorites', FavoriteContentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

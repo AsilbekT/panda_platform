@@ -1,7 +1,8 @@
 import requests
 from rest_framework import viewsets, status
+from rest_framework.decorators import action
 from .utils import standardResponse
-from .models import Episode, UserSubscription
+from .models import Episode, FavoriteContent, UserSubscription, Movie, Series
 
 
 class BaseViewSet(viewsets.ModelViewSet):
@@ -100,3 +101,66 @@ class BaseViewSet(viewsets.ModelViewSet):
             return False
         except UserSubscription.DoesNotExist:
             return False
+
+    @action(detail=True, methods=['post'], url_path='add-favorite')
+    def add_favorite(self, request, pk=None):
+        content_type = request.data.get('content_type')
+        try:
+            # Validate the token and get user information
+            auth_status, user_info, _ = self.validate_token(request)
+            if not auth_status:
+                return standardResponse(status='error', message='Invalid or expired token', data=status.HTTP_401_UNAUTHORIZED)
+
+            # Fetch the content object based on type and ID
+            if content_type == 'MOVIE':
+                content_object = Movie.objects.get(pk=pk)
+            elif content_type == 'SERIES':
+                content_object = Series.objects.get(pk=pk)
+            else:
+                return standardResponse(status='error', message='Invalid content type', data=status.HTTP_400_BAD_REQUEST)
+            existing_favorite = FavoriteContent.objects.filter(
+                username=user_info['username'], content_object=content_object)
+            if existing_favorite.exists():
+                return standardResponse(status='error', message='Content already added to favorites', data=status.HTTP_409_CONFLICT)
+
+            FavoriteContent.objects.create(
+                username=user_info['username'],
+                content_object=content_object
+            )
+            return standardResponse(status='success', message='Added to favorites', data={})
+
+        except (Movie.DoesNotExist, Series.DoesNotExist):
+            return standardResponse(status='error', message='Content not found', data=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return standardResponse(status='error', message=str(e), data=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], url_path='remove-favorite')
+    def remove_favorite(self, request, pk=None):
+        content_type = request.data.get('content_type')
+        try:
+            auth_status, user_info, _ = self.validate_token(request)
+            if not auth_status:
+                return standardResponse(status='error', message='Invalid or expired token', data=status.HTTP_401_UNAUTHORIZED)
+
+            # Fetch the content object based on type and ID
+            if content_type == 'movie':
+                content_object = Movie.objects.get(pk=pk)
+            elif content_type == 'series':
+                content_object = Series.objects.get(pk=pk)
+            else:
+                return standardResponse(status='error', message='Invalid content type', data=status.HTTP_400_BAD_REQUEST)
+
+            favorite = FavoriteContent.objects.filter(
+                username=user_info['username'],
+                content_object=content_object
+            )
+            if favorite.exists():
+                favorite.delete()
+                return standardResponse(status='success', message='Removed from favorites', data={})
+            else:
+                return standardResponse(status='error', message='Favorite not found', data=status.HTTP_404_NOT_FOUND)
+
+        except (Movie.DoesNotExist, Series.DoesNotExist):
+            return standardResponse(status='error', message='Content not found', data=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return standardResponse(status='error', message=str(e), data=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription
+from .models import Catagory, FavoriteContent, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -274,3 +274,9 @@ class UserSubscriptionSerializer(serializers.ModelSerializer):
         model = UserSubscription
         fields = ['id', 'user_id', 'username', 'subscription_plan_name',
                   'start_date', 'end_date', 'status']
+
+
+class FavoriteContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FavoriteContent
+        fields = ['id', 'content_object']

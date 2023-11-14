@@ -1,5 +1,6 @@
-from video_app.utils import standardResponse, user_has_active_plan
-from .models import Catagory, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription
+from django.contrib.contenttypes.models import ContentType
+from video_app.utils import decode_token, standardResponse, user_has_active_plan
+from .models import Catagory, FavoriteContent, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription, ContentType
 from .serializers import (
     CategorySerializer,
     EpisodeSerializerDetails,
@@ -24,6 +25,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
 
 class GenreViewSet(BaseViewSet):
@@ -202,3 +204,57 @@ class UserSubscriptionViewSet(BaseViewSet):
     """
     queryset = UserSubscription.objects.all().order_by('-start_date')
     serializer_class = UserSubscriptionSerializer
+
+
+class FavoriteContentViewSet(BaseViewSet):
+    queryset = FavoriteContent.objects.all()
+
+    def list(self, request, *args, **kwargs):
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '').split()
+        if len(auth_header) != 2 or auth_header[0].lower() != 'bearer':
+            return standardResponse(status='error', message='Invalid or expired token', data=status.HTTP_401_UNAUTHORIZED)
+
+        token = auth_header[1]
+        user_info = decode_token(token)
+
+        # Fetch favorite movies
+        favorite_movies = FavoriteContent.objects.filter(
+            username=user_info['username'],
+            content_type=ContentType.objects.get_for_model(Movie)
+        )
+        movie_ids = [fav.object_id for fav in favorite_movies]
+        movies_query = Movie.objects.filter(id__in=movie_ids).order_by("id")
+
+        # Paginate movies
+        paginated_movies, movie_pagination_data = paginate_queryset(
+            movies_query, request)
+        movie_serializer = MovieSerializer(
+            paginated_movies, many=True, context={'request': request})
+
+        # Fetch favorite series
+        favorite_series = FavoriteContent.objects.filter(
+            username=user_info['username'],
+            content_type=ContentType.objects.get_for_model(Series)
+        )
+        series_ids = [fav.object_id for fav in favorite_series]
+        series_query = Series.objects.filter(id__in=series_ids).order_by("id")
+
+        # Paginate series
+        paginated_series, series_pagination_data = paginate_queryset(
+            series_query, request)
+        series_serializer = SeriesSerializer(
+            paginated_series, many=True, context={'request': request})
+
+        # Combine data with pagination info
+        data = {
+            'movies': {
+                'results': movie_serializer.data,
+                'pagination': movie_pagination_data
+            },
+            'series': {
+                'results': series_serializer.data,
+                'pagination': series_pagination_data
+            }
+        }
+
+        return standardResponse(status="success", message="Favorite movies and series retrieved", data=data)

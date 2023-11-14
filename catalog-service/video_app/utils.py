@@ -4,7 +4,12 @@ from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from PIL import Image
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import jwt
+from jwt.exceptions import InvalidTokenError
+
 # from .models import SubscriptionPlan
+SECRET_KEY = 'VpwI_yUDuQuhA1VEB0c0f9qki8JtLeFWh3lA5kKvyGnHxKrZ-M59cA'
+ALGORITHM = "HS256"
 
 
 BILLING_SERVICE_URL = "http://127.0.0.1:8001/"
@@ -73,3 +78,21 @@ def user_has_active_plan(username, token):
     if response.status_code == 200:
         return True
     return False
+
+
+def decode_token(token):
+    """
+    Decodes a JWT token.
+
+    :param token: The JWT token to decode.
+    :param secret_key: The secret key used to decode the token.
+    :param algorithms: List of algorithms to use for decoding. Default is ['HS256'].
+    :return: The decoded token payload if the token is valid, None otherwise.
+    """
+    try:
+        # The token usually comes in the format "Bearer <token>". We split to get the token part.
+        token = token.split(' ')[1] if ' ' in token else token
+        return jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
+    except InvalidTokenError:
+        # Handle invalid token cases here (e.g., expired, malformed)
+        return None
