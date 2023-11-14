@@ -22,6 +22,8 @@ from .base_view import BaseViewSet
 from video_app.utils import paginate_queryset
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
 
 
 class GenreViewSet(BaseViewSet):
@@ -50,16 +52,14 @@ class MovieViewSet(BaseViewSet):
         queryset = self.queryset.filter(
             genre_id=genre_from_param) if genre_from_param else self.queryset
 
-        paginated_queryset, error_response = paginate_queryset(
+        paginated_queryset, pagination_data = paginate_queryset(
             queryset, request)
-        if error_response:
-            return error_response
+        if not paginated_queryset:
+            return standardResponse(status="error", message="Invalid page.", data={})
 
-        if paginated_queryset:
-            serializer = self.get_serializer(
-                paginated_queryset, many=True, context={'request': request})
-            return standardResponse(status="success", message="Movies retrieved", data=serializer.data)
-        return standardResponse(status="error", message="No movies found", data={})
+        serializer = self.get_serializer(
+            paginated_queryset, many=True, context={'request': request})
+        return standardResponse(status="success", message="Movies retrieved", data=serializer.data, pagination=pagination_data)
 
 
 class SeriesViewSet(BaseViewSet):
@@ -81,14 +81,14 @@ class SeriesViewSet(BaseViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        paginated_queryset, error_response = paginate_queryset(
+        paginated_queryset, pagination_data = paginate_queryset(
             queryset, request)
-        if error_response:
-            return error_response
+        if not paginated_queryset:
+            return standardResponse(status="error", message="Invalid page.", data={})
 
         serializer = self.get_serializer(
             paginated_queryset, many=True, context={'request': request})
-        return standardResponse(status="success", message="Series retrieved", data=serializer.data)
+        return standardResponse(status="success", message="Series retrieved", data=serializer.data, pagination=pagination_data)
 
 
 class EpisodeViewSet(BaseViewSet):
@@ -105,18 +105,14 @@ class EpisodeViewSet(BaseViewSet):
         queryset = self.queryset.filter(
             series_id=series_id) if series_id else self.queryset
 
-        paginated_queryset, error_response = paginate_queryset(
-            queryset, request
-        )
-        if error_response:
-            return error_response
+        paginated_queryset, pagination_data = paginate_queryset(
+            queryset, request)
+        if not paginated_queryset:
+            return standardResponse(status="error", message="Invalid page.", data={})
 
-        if paginated_queryset:
-            serializer = EpisodeSerializer(
-                paginated_queryset, many=True, context={'request': request}
-            )
-            return standardResponse(status="success", message="Episodes retrieved", data=serializer.data)
-        return standardResponse(status="error", message="No episodes found", data={})
+        serializer = EpisodeSerializer(
+            paginated_queryset, many=True, context={'request': request})
+        return standardResponse(status="success", message="Episodes retrieved", data=serializer.data, pagination=pagination_data)
 
 
 class SeasonViewSet(BaseViewSet):
@@ -153,27 +149,41 @@ class CategoryViewSet(BaseViewSet):
         try:
             category = Catagory.objects.get(id=pk)
 
-            # Fetch movies and series related to this category
-            movies = Movie.objects.filter(category=category)
-            series = Series.objects.filter(category=category)
+            # Fetch and paginate movies related to this category
+            movies_query = Movie.objects.filter(
+                category=category).order_by('id')
+            paginated_movies, movie_pagination_data = paginate_queryset(
+                movies_query, request)
+            if not paginated_movies:
+                return Response({"status": "error", "message": "Invalid page for movies.", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Fetch and paginate series related to this category
+            series_query = Series.objects.filter(
+                category=category).order_by('id')
+            paginated_series, series_pagination_data = paginate_queryset(
+                series_query, request)
+            if not paginated_series:
+                return Response({"status": "error", "message": "Invalid page for series.", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
 
             # Serialize movies and series
             movie_serializer = HomeMovieSerializer(
-                movies, many=True, context={'request': request})
+                paginated_movies, many=True, context={'request': request})
             series_serializer = SeriesListSerializer(
-                series, many=True, context={'request': request})
+                paginated_series, many=True, context={'request': request})
 
             # Aggregate data
             data = {
                 "movies": movie_serializer.data,
-                "series": series_serializer.data
+                "series": series_serializer.data,
+                "movies_pagination": movie_pagination_data,
+                "series_pagination": series_pagination_data
             }
 
-            return standardResponse(status="success", message="Data retrieved", data=data)
+            return Response({"status": "success", "message": "Data retrieved", "data": data}, status=status.HTTP_200_OK)
         except Catagory.DoesNotExist:
-            return standardResponse(status="error", message="Category not found", data={})
+            return Response({"status": "error", "message": "Category not found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            return standardResponse(status="error", message=str(e), data={})
+            return Response({"status": "error", "message": str(e), "data": {}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class BannerViewSet(BaseViewSet):

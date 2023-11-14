@@ -3,31 +3,52 @@ from rest_framework.response import Response
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from PIL import Image
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 # from .models import SubscriptionPlan
 
 
 BILLING_SERVICE_URL = "http://127.0.0.1:8001/"
 
 
-def standardResponse(status, message, data=None):
-    return Response({
-        "status": status,
-        "message": message,
-        "data": data
-    })
+def standardResponse(status, message, data, pagination=None):
+    response = {
+        'status': status,
+        'message': message,
+        'data': data
+    }
+    if pagination:
+        response['pagination'] = pagination
+    return Response(response)
 
 
 def paginate_queryset(queryset, request):
-    page_number = int(request.query_params.get('page', 1))
-    page_size = int(request.query_params.get('size', 10))
+    page_number = request.query_params.get('page', 1)
+    page_size = request.query_params.get('size', 10)
 
     paginator = Paginator(queryset, page_size)
+
     try:
         paginated_queryset = paginator.page(page_number)
-    except Exception:
-        return None, standardResponse(status="error", message="Invalid page.", data={})
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        paginated_queryset = paginator.page(1)
+        page_number = 1
+    except EmptyPage:
+        # If page is out of range, deliver last page of results.
+        paginated_queryset = paginator.page(paginator.num_pages)
+        page_number = paginator.num_pages
 
-    return paginated_queryset, None
+    # Create pagination response
+    pagination_data = {
+        'total': paginator.count,
+        'page_size': page_size,
+        'current_page': int(page_number),
+        'total_pages': paginator.num_pages,
+        'next': paginated_queryset.has_next(),
+        'previous': paginated_queryset.has_previous(),
+    }
+
+    return paginated_queryset, pagination_data
 
 
 def validate_file_size(value):
