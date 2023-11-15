@@ -1,8 +1,10 @@
 import requests
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+
+from video_app.serializers import CommentSerializer
 from .utils import standardResponse
-from .models import Episode, FavoriteContent, UserSubscription, Movie, Series
+from .models import Episode, FavoriteContent, UserSubscription, Movie, Series, Comment, ContentType
 
 
 class BaseViewSet(viewsets.ModelViewSet):
@@ -64,6 +66,15 @@ class BaseViewSet(viewsets.ModelViewSet):
             serialized_data['episode_content_url'] = None
         else:
             serialized_data['main_content_url'] = None
+
+        if isinstance(instance, (Movie, Series)):
+            content_type = ContentType.objects.get_for_model(type(instance))
+            comments = Comment.objects.filter(
+                content_type=content_type, object_id=instance.id)
+
+            comment_serializer = CommentSerializer(comments, many=True)
+            serialized_data['comments'] = comment_serializer.data
+
         return standardResponse(status="success", message="Item retrieved", data=serialized_data)
 
     def update(self, request, *args, **kwargs):
@@ -104,7 +115,7 @@ class BaseViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'], url_path='add-favorite')
     def add_favorite(self, request, pk=None):
-        content_type = request.data.get('content_type')
+        content_type_request = request.data.get('content_type')
         try:
             # Validate the token and get user information
             auth_status, user_info, _ = self.validate_token(request)
@@ -112,20 +123,31 @@ class BaseViewSet(viewsets.ModelViewSet):
                 return standardResponse(status='error', message='Invalid or expired token', data=status.HTTP_401_UNAUTHORIZED)
 
             # Fetch the content object based on type and ID
-            if content_type == 'MOVIE':
+            if content_type_request == 'MOVIE':
                 content_object = Movie.objects.get(pk=pk)
-            elif content_type == 'SERIES':
+            elif content_type_request == 'SERIES':
                 content_object = Series.objects.get(pk=pk)
             else:
                 return standardResponse(status='error', message='Invalid content type', data=status.HTTP_400_BAD_REQUEST)
+
+            # Get the content type for the content object
+            content_type = ContentType.objects.get_for_model(
+                content_object.__class__)
+
+            # Check if the content is already a favorite
             existing_favorite = FavoriteContent.objects.filter(
-                username=user_info['username'], content_object=content_object)
+                username=user_info['username'],
+                content_type=content_type,
+                object_id=content_object.pk
+            )
             if existing_favorite.exists():
                 return standardResponse(status='error', message='Content already added to favorites', data=status.HTTP_409_CONFLICT)
 
+            # Create a new favorite content entry
             FavoriteContent.objects.create(
                 username=user_info['username'],
-                content_object=content_object
+                content_type=content_type,
+                object_id=content_object.pk
             )
             return standardResponse(status='success', message='Added to favorites', data={})
 

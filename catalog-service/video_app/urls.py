@@ -2,6 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 from .views import (
+    CommentListCreateView,
     FavoriteContentViewSet,
     GenreViewSet,
     DirectorViewSet,
@@ -41,5 +42,6 @@ router.register(r'user-favorites', FavoriteContentViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(series_router.urls)),
+    path('comments/', CommentListCreateView.as_view(), name='comment-list'),
     path('', include(seasons_router.urls)),
 ]

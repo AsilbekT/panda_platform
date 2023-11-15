@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Catagory, FavoriteContent, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription
+from .models import Catagory, Comment, FavoriteContent, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription
+from django.contrib.contenttypes.models import ContentType
 
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -280,3 +281,33 @@ class FavoriteContentSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoriteContent
         fields = ['id', 'content_object']
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    content_type = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'username', 'content', 'object_id',
+                  'content_type', 'parent', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate_content_type(self, value):
+        app_label = 'video_app'  # Assuming 'video_app' is the app label
+        try:
+            # Convert the string to a ContentType instance
+            return ContentType.objects.get(app_label=app_label, model=value.lower())
+        except ContentType.DoesNotExist:
+            raise serializers.ValidationError('Invalid content type')
+
+    def create(self, validated_data):
+        # Extract content_type and object_id from validated_data
+        content_type = validated_data.pop('content_type')
+        object_id = validated_data.pop('object_id')
+
+        # Create the Comment instance
+        return Comment.objects.create(content_type=content_type, object_id=object_id, **validated_data)
+
+    def get_comment_count(self, obj):
+        content_type = ContentType.objects.get_for_model(Movie)
+        return Comment.objects.filter(content_type=content_type, object_id=obj.id).count()

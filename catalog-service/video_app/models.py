@@ -4,6 +4,7 @@ from .utils import validate_file_size, validate_image_file
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
+from django.contrib.contenttypes.fields import GenericRelation
 
 # Model for storing different genres
 
@@ -16,6 +17,19 @@ class SubscriptionPlan(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class FavoriteContent(models.Model):
+    username = models.CharField(max_length=200)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    class Meta:
+        unique_together = ('username', 'content_type', 'object_id')
+
+    def __str__(self):
+        return f"{self.username}'s favorite {self.content_object.title}"
 
 
 class VideoConversionType(models.Model):
@@ -114,6 +128,7 @@ class Movie(Content):
     is_trending = models.BooleanField(default=False)
     conversion_type = models.ForeignKey(
         VideoConversionType, on_delete=models.SET_NULL, null=True, related_name='movies')
+    favorites = GenericRelation(FavoriteContent)
 
     class Meta(Content.Meta):
         db_table = 'movie_table'
@@ -130,6 +145,8 @@ class Series(Content):
     is_trending = models.BooleanField(default=False)
     conversion_type = models.ForeignKey(
         VideoConversionType, on_delete=models.SET_NULL, null=True, related_name='series')
+    favorites = GenericRelation(FavoriteContent)
+    # favorites = models.URLField(blank=True, null=True)
 
     class Meta(Content.Meta):
         db_table = 'series_table'
@@ -257,14 +274,30 @@ class UserSubscription(models.Model):
         return self.status == 'Active' and self.start_date <= timezone.now().date() <= self.end_date
 
 
-class FavoriteContent(models.Model):
+class Comment(models.Model):
     username = models.CharField(max_length=200)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    content = models.TextField()
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to=models.Q(app_label='video_app', model='movie') | models.Q(
+            app_label='video_app', model='series')
+    )
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey('content_type', 'object_id')
+    parent = models.ForeignKey(
+        'self', null=True, blank=True, related_name='replies', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('username', 'content_type', 'object_id')
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.username}'s favorite {self.content_object.title}"
+        return f"Comment by {self.username} on {self.content_object}"
+
+    @property
+    def is_reply(self):
+        return self.parent is not None

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Banner, FavoriteContent, Season, UserSubscription
+from .models import Banner, Comment, FavoriteContent, Season, UserSubscription
 from django.utils.html import format_html
 from django.contrib import admin, messages
 from .models import (
@@ -100,9 +100,20 @@ class FavoriteContentAdmin(admin.ModelAdmin):
     content_object_display.short_description = 'Content'
 
 
-# Register your models here.
-admin.site.register(FavoriteContent, FavoriteContentAdmin)
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('username', 'content', 'created_at',
+                    'updated_at', 'is_reply')
+    list_filter = ('created_at', 'username')
+    search_fields = ('username', 'content')
+    raw_id_fields = ('parent',)
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('parent')
+
+
+# Register your models here.
+admin.site.register(Comment, CommentAdmin)
+admin.site.register(FavoriteContent, FavoriteContentAdmin)
 admin.site.register(Season, SeasonAdmin)
 admin.site.register(Banner, BannerAdmin)
 admin.site.register(Genre, GenreAdmin)
