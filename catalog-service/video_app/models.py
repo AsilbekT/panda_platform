@@ -129,6 +129,7 @@ class Movie(Content):
     conversion_type = models.ForeignKey(
         VideoConversionType, on_delete=models.SET_NULL, null=True, related_name='movies')
     favorites = GenericRelation(FavoriteContent)
+    is_movie = models.BooleanField(default=True)
 
     class Meta(Content.Meta):
         db_table = 'movie_table'
@@ -146,7 +147,7 @@ class Series(Content):
     conversion_type = models.ForeignKey(
         VideoConversionType, on_delete=models.SET_NULL, null=True, related_name='series')
     favorites = GenericRelation(FavoriteContent)
-    # favorites = models.URLField(blank=True, null=True)
+    is_movie = models.BooleanField(default=False)
 
     class Meta(Content.Meta):
         db_table = 'series_table'

@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from video_app.utils import decode_token, standardResponse, user_has_active_plan
-from .models import Catagory, Comment, FavoriteContent, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription, ContentType
+from .models import Catagory, Comment, Content, FavoriteContent, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription, ContentType
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -134,6 +134,7 @@ class SeasonViewSet(BaseViewSet):
 
 class CategoryViewSet(BaseViewSet):
     serializer_class = CategorySerializer
+    queryset = Catagory.objects.none()
 
     def list(self, request, *args, **kwargs):
         try:
@@ -155,41 +156,47 @@ class CategoryViewSet(BaseViewSet):
         try:
             category = Catagory.objects.get(id=pk)
 
-            # Fetch and paginate movies related to this category
-            movies_query = Movie.objects.filter(
-                category=category).order_by('id')
-            paginated_movies, movie_pagination_data = paginate_queryset(
-                movies_query, request)
-            if not paginated_movies:
-                return Response({"status": "error", "message": "Invalid page for movies.", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+            # Fetch movies and series related to this category
+            movies = Movie.objects.filter(category=category).order_by('id')
+            series = Series.objects.filter(category=category).order_by('id')
 
-            # Fetch and paginate series related to this category
-            series_query = Series.objects.filter(
-                category=category).order_by('id')
-            paginated_series, series_pagination_data = paginate_queryset(
-                series_query, request)
-            if not paginated_series:
-                return Response({"status": "error", "message": "Invalid page for series.", "data": {}}, status=status.HTTP_400_BAD_REQUEST)
+            # Combine movies and series into a single queryset
+            combined_content = list(movies) + list(series)
 
-            # Serialize movies and series
-            movie_serializer = HomeMovieSerializer(
-                paginated_movies, many=True, context={'request': request})
-            series_serializer = SeriesListSerializer(
-                paginated_series, many=True, context={'request': request})
+            # Paginate the combined queryset
+            page = self.paginate_queryset(combined_content)
+            if page is not None:
+                # Serialize page items
+                content_list = []
+                for item in page:
+                    if isinstance(item, Movie):
+                        serialized_item = HomeMovieSerializer(
+                            item, context={'request': request}).data
+                        serialized_item['is_movie'] = True
+                    else:
+                        serialized_item = SeriesListSerializer(
+                            item, context={'request': request}).data
+                        serialized_item['is_movie'] = False
+                    content_list.append(serialized_item)
 
-            # Aggregate data
-            data = {
-                "movies": movie_serializer.data,
-                "series": series_serializer.data,
-                "movies_pagination": movie_pagination_data,
-                "series_pagination": series_pagination_data
-            }
+                pagination_data = {
+                    "total": self.paginator.page.paginator.count,
+                    "page_size": self.paginator.page_size,
+                    "current_page": self.paginator.page.number,
+                    "total_pages": self.paginator.page.paginator.num_pages,
+                    "next": self.paginator.get_next_link() is not None,
+                    "previous": self.paginator.get_previous_link() is not None
+                }
 
-            return Response({"status": "success", "message": "Data retrieved", "data": data}, status=status.HTTP_200_OK)
+                # Return standard response with custom pagination
+                return standardResponse(status="success", message="Data retrieved", data={"content": content_list, "pagination": pagination_data})
+
+            # Fallback if pagination is not applicable
+            return standardResponse(status="error", message="Pagination error", data={})
         except Catagory.DoesNotExist:
-            return Response({"status": "error", "message": "Category not found", "data": {}}, status=status.HTTP_404_NOT_FOUND)
+            return standardResponse(status="error", message="Category not found", data={})
         except Exception as e:
-            return Response({"status": "error", "message": str(e), "data": {}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return standardResponse(status="error", message=str(e), data={})
 
 
 class BannerViewSet(BaseViewSet):
