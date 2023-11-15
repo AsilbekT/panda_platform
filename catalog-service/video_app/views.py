@@ -238,32 +238,34 @@ class FavoriteContentViewSet(BaseViewSet):
         # Query movies and series
         movies_query = Movie.objects.filter(id__in=movie_ids).order_by("id")
         series_query = Series.objects.filter(id__in=series_ids).order_by("id")
+        combined_content = list(movies_query) + list(series_query)
 
-        # Paginate movies and series
-        paginated_movies, movie_pagination_data = paginate_queryset(
-            movies_query, request)
-        paginated_series, series_pagination_data = paginate_queryset(
-            series_query, request)
+        # Paginate the combined queryset
+        page = self.paginate_queryset(combined_content)
 
-        # Serialize data
-        movie_serializer = MovieSerializer(
-            paginated_movies, many=True, context={'request': request})
-        series_serializer = SeriesSerializer(
-            paginated_series, many=True, context={'request': request})
+        if page is not None:
+            # Serialize page items
+            content_list = []
+            for item in page:
+                if isinstance(item, Movie):
+                    serialized_item = HomeMovieSerializer(
+                        item, context={'request': request}).data
+                    serialized_item['is_movie'] = True
+                else:
+                    serialized_item = SeriesListSerializer(
+                        item, context={'request': request}).data
+                    serialized_item['is_movie'] = False
+                content_list.append(serialized_item)
 
-        # Combine data with pagination info
-        data = {
-            'movies': {
-                'results': movie_serializer.data,
-                'pagination': movie_pagination_data
-            },
-            'series': {
-                'results': series_serializer.data,
-                'pagination': series_pagination_data
+            pagination_data = {
+                "total": self.paginator.page.paginator.count,
+                "page_size": self.paginator.page_size,
+                "current_page": self.paginator.page.number,
+                "total_pages": self.paginator.page.paginator.num_pages,
+                "next": self.paginator.get_next_link() is not None,
+                "previous": self.paginator.get_previous_link() is not None
             }
-        }
-
-        return standardResponse(status="success", message="Favorite movies and series retrieved", data=data)
+            return standardResponse(status="success", message="Data retrieved", data={"content": content_list, "pagination": pagination_data})
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
