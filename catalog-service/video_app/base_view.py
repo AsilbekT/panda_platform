@@ -38,9 +38,16 @@ class BaseViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         serialized_data = serializer.data
-
         # Fetch the authorization header
         auth_header = request.headers.get('Authorization', '')
+
+        if isinstance(instance, (Movie, Series)):
+            content_type = ContentType.objects.get_for_model(type(instance))
+            comments = Comment.objects.filter(
+                content_type=content_type, object_id=instance.id)
+
+            comment_serializer = CommentSerializer(comments, many=True)
+            serialized_data['comments'] = comment_serializer.data
 
         # Determine if the content is free
         if isinstance(instance, Episode):
@@ -53,7 +60,6 @@ class BaseViewSet(viewsets.ModelViewSet):
         if is_free_content:
             return standardResponse(status="success", message="Item retrieved", data=serialized_data)
 
-        # If an auth header is provided, validate the token
         if auth_header.startswith('Bearer '):
             auth_status, user_info, _ = self.validate_token(request)
 
@@ -66,14 +72,6 @@ class BaseViewSet(viewsets.ModelViewSet):
             serialized_data['episode_content_url'] = None
         else:
             serialized_data['main_content_url'] = None
-
-        if isinstance(instance, (Movie, Series)):
-            content_type = ContentType.objects.get_for_model(type(instance))
-            comments = Comment.objects.filter(
-                content_type=content_type, object_id=instance.id)
-
-            comment_serializer = CommentSerializer(comments, many=True)
-            serialized_data['comments'] = comment_serializer.data
 
         return standardResponse(status="success", message="Item retrieved", data=serialized_data)
 

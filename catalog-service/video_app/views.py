@@ -261,25 +261,21 @@ class CommentListCreateView(generics.ListCreateAPIView):
     serializer_class = CommentSerializer
 
     def perform_create(self, serializer):
-        content_type_str = self.request.data.get('content_type').lower()
+        content_type_str = self.request.data.get('content_type', '').lower()
         object_id = self.request.data.get('object_id')
 
-        # Assuming 'video_app' is the app label
-        app_label = 'video_app'
+        if not content_type_str or not object_id:
+            return standardResponse('error', 'Missing content type or object ID', {}, status.HTTP_400_BAD_REQUEST)
+
+        app_label = 'video_app'  # Replace with your actual app label
 
         try:
-            # Fetch the ContentType based on app_label and model
             content_type = ContentType.objects.get(
                 app_label=app_label, model=content_type_str)
         except ContentType.DoesNotExist:
-            return Response(
-                {'status': 'error', 'message': 'Invalid content type'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        # Fetch the username from the token
-        username = self.get_username_from_token()
+            return standardResponse('error', 'Invalid content type', {}, status.HTTP_400_BAD_REQUEST)
 
-        # Save the comment with the fetched ContentType and object_id
+        username = self.get_username_from_token()
         serializer.save(username=username,
                         content_type=content_type, object_id=object_id)
 
@@ -288,27 +284,25 @@ class CommentListCreateView(generics.ListCreateAPIView):
         if len(auth_header) == 2 and auth_header[0].lower() == 'bearer':
             token = auth_header[1]
             user_info = decode_token(token)
-            # Ensure 'username' is a key in the token payload
-            return user_info.get('username')
+            return user_info.get('username', 'anonymous')
         return 'anonymous'
 
     def create(self, request, *args, **kwargs):
-        # Override the create method to add custom response for token errors
         auth_header = request.META.get('HTTP_AUTHORIZATION', '').split()
         if len(auth_header) != 2 or auth_header[0].lower() != 'bearer':
-            return Response(
-                {'status': 'error', 'message': 'Invalid or expired token'},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
+            return standardResponse('error', 'Invalid or expired token', {}, status.HTTP_401_UNAUTHORIZED)
 
-        return super().create(request, *args, **kwargs)
+        response = super().create(request, *args, **kwargs)
+        if response.status_code == 201:
+            return standardResponse('success', 'Comment created', response.data)
+        return response
 
     def get_queryset(self):
         content_type_str = self.request.query_params.get('content_type')
         object_id = self.request.query_params.get('object_id')
 
         if content_type_str and object_id:
-            app_label = 'video_app'  # Assuming 'video_app' is the app label
+            app_label = 'video_app'  # Replace with your actual app label
             try:
                 content_type = ContentType.objects.get(
                     app_label=app_label, model=content_type_str.lower())
