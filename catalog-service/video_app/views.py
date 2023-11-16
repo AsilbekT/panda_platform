@@ -163,36 +163,28 @@ class CategoryViewSet(BaseViewSet):
             # Combine movies and series into a single queryset
             combined_content = list(movies) + list(series)
 
-            # Paginate the combined queryset
-            page = self.paginate_queryset(combined_content)
-            if page is not None:
-                # Serialize page items
-                content_list = []
-                for item in page:
-                    if isinstance(item, Movie):
-                        serialized_item = HomeMovieSerializer(
-                            item, context={'request': request}).data
-                        serialized_item['is_movie'] = True
-                    else:
-                        serialized_item = SeriesListSerializer(
-                            item, context={'request': request}).data
-                        serialized_item['is_movie'] = False
-                    content_list.append(serialized_item)
+            # Paginate the combined list using your custom function
+            paginated_queryset, pagination_data = paginate_queryset(
+                combined_content, request)
+            if not paginated_queryset:
+                return standardResponse(status="error", message="Invalid page.", data={})
 
-                pagination_data = {
-                    "total": self.paginator.page.paginator.count,
-                    "page_size": self.paginator.page_size,
-                    "current_page": self.paginator.page.number,
-                    "total_pages": self.paginator.page.paginator.num_pages,
-                    "next": self.paginator.get_next_link() is not None,
-                    "previous": self.paginator.get_previous_link() is not None
-                }
+            # Serialize page items
+            content_list = []
+            for item in paginated_queryset:
+                if isinstance(item, Movie):
+                    serialized_item = HomeMovieSerializer(
+                        item, context={'request': request}).data
+                    serialized_item['is_movie'] = True
+                else:
+                    serialized_item = SeriesListSerializer(
+                        item, context={'request': request}).data
+                    serialized_item['is_movie'] = False
+                content_list.append(serialized_item)
 
-                # Return standard response with custom pagination
-                return standardResponse(status="success", message="Data retrieved", data={"content": content_list, "pagination": pagination_data})
+            # Return standard response with custom pagination
+            return standardResponse(status="success", message="Contents retrieved", data={"content": content_list, "pagination": pagination_data})
 
-            # Fallback if pagination is not applicable
-            return standardResponse(status="error", message="Pagination error", data={})
         except Catagory.DoesNotExist:
             return standardResponse(status="error", message="Category not found", data={})
         except Exception as e:
@@ -238,34 +230,30 @@ class FavoriteContentViewSet(BaseViewSet):
         # Query movies and series
         movies_query = Movie.objects.filter(id__in=movie_ids).order_by("id")
         series_query = Series.objects.filter(id__in=series_ids).order_by("id")
+        # Combine movies and series into a single queryset
         combined_content = list(movies_query) + list(series_query)
 
-        # Paginate the combined queryset
-        page = self.paginate_queryset(combined_content)
+        # Paginate the combined list using your custom function
+        paginated_queryset, pagination_data = paginate_queryset(
+            combined_content, request)
+        if not paginated_queryset:
+            return standardResponse(status="error", message="Invalid page.", data={})
 
-        if page is not None:
-            # Serialize page items
-            content_list = []
-            for item in page:
-                if isinstance(item, Movie):
-                    serialized_item = HomeMovieSerializer(
-                        item, context={'request': request}).data
-                    serialized_item['is_movie'] = True
-                else:
-                    serialized_item = SeriesListSerializer(
-                        item, context={'request': request}).data
-                    serialized_item['is_movie'] = False
-                content_list.append(serialized_item)
+        # Serialize page items
+        content_list = []
+        for item in paginated_queryset:
+            if isinstance(item, Movie):
+                serialized_item = HomeMovieSerializer(
+                    item, context={'request': request}).data
+                serialized_item['is_movie'] = True
+            else:
+                serialized_item = SeriesListSerializer(
+                    item, context={'request': request}).data
+                serialized_item['is_movie'] = False
+            content_list.append(serialized_item)
 
-            pagination_data = {
-                "total": self.paginator.page.paginator.count,
-                "page_size": self.paginator.page_size,
-                "current_page": self.paginator.page.number,
-                "total_pages": self.paginator.page.paginator.num_pages,
-                "next": self.paginator.get_next_link() is not None,
-                "previous": self.paginator.get_previous_link() is not None
-            }
-            return standardResponse(status="success", message="Data retrieved", data={"content": content_list, "pagination": pagination_data})
+        # Return standard response with custom pagination
+        return standardResponse(status="success", message="Contents retrieved", data={"content": content_list, "pagination": pagination_data})
 
 
 class CommentListCreateView(generics.ListCreateAPIView):
