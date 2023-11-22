@@ -1,6 +1,7 @@
 import uuid
 import requests
 import hashlib
+from rest_framework.response import Response
 
 BASE_URL = 'http://127.0.0.1:8000/plans/'
 CATALOG_SERVICE_SUBSCRIPTION_URL = 'http://127.0.0.1:8000/subscriptions/'
@@ -102,3 +103,14 @@ def send_user_subscription_to_catalog(instance):
     else:
         print(
             f'Failed to send UserSubscription data for user {instance.billing_info.username}. Status code: {response.status_code}')
+
+
+def standardResponse(status, message, data, pagination=None):
+    response = {
+        'status': status,
+        'message': message,
+        'data': data
+    }
+    if pagination:
+        response['pagination'] = pagination
+    return Response(response)

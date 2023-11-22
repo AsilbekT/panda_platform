@@ -19,7 +19,7 @@ from .decorators import verify_token
 from .serializers import SubscriptionPlanSerializer, UserSubscriptionSerializer
 from django.views.decorators.csrf import csrf_exempt
 from hashlib import md5
-from .utils import create_click_payment_url
+from .utils import create_click_payment_url, standardResponse
 
 
 CLICK_PAYMENT_URL = "https://my.click.uz/services/pay"
@@ -130,15 +130,16 @@ class UserSubscriptionView(View):
             user_subscriptions, error_message = SubscriptionService.get_user_subscriptions(
                 username)
         except ObjectDoesNotExist:
-            return JsonResponse({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            return standardResponse(message=error_message, status=status.HTTP_404_NOT_FOUND, data={})
 
         if error_message:
-            return JsonResponse({"message": error_message}, status=status.HTTP_404_NOT_FOUND)
+            return standardResponse(message=error_message, status=status.HTTP_404_NOT_FOUND, data={})
 
         if user_subscriptions and user_subscriptions.exists():
             serializer = UserSubscriptionSerializer(
                 user_subscriptions, many=True)
-            return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+            # return JsonResponse(serializer.data, safe=False, status=status.HTTP_200_OK)
+            return standardResponse(message="Data retrieved", status=status.HTTP_404_NOT_FOUND, data=serializer.data)
 
         return JsonResponse({"message": "No subscriptions found for this user"}, status=status.HTTP_404_NOT_FOUND)
 

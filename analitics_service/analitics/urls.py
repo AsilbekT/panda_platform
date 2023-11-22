@@ -1,23 +1,65 @@
-# urls.py in your Django project or app
-
 from django.urls import path
 from .views import (
-    TotalRevenueView,
-    TotalReviewsView,
+    AverageSessionLengthView,
+    BannerView,
+    ContentLikesCountView,
+    MostWatchedContentView,
+    PeakViewingTimesView,
+    StreamingQualityDataView,
+    UserSessionDataView,
+    UserStatisticsView,
+    UserWatchDataView,
+    UserActivityView,
+    ReviewView,
     TotalWatchDurationView,
-    user_watch_data_view,
-
+    TotalReviewsView,
+    UserTotalWatchStatisticsView,
+    ContentWatchCountView,
+    LastWatchedPositionView,
+    FetchTotalRevenueView,
+    FetchRevenueByPlanView,
+    FetchARPUView,
+    FetchTransactionRatesView
 )
 
-
 urlpatterns = [
-    path('record-watch-data/', user_watch_data_view, name='record-watch-data'),
-    path('content/<int:content_id>/total-watch-duration/',
-         TotalWatchDurationView.as_view()),
+    path('user-watch-data/', UserWatchDataView.as_view(), name='user_watch_data'),
+    path('user-activity/', UserActivityView.as_view(), name='user_activity'),
+    path('review/', ReviewView.as_view(), name='review'),
+    path('content-likes-count/<int:content_id>/',
+         ContentLikesCountView.as_view(), name='content_likes_count'),
+    path('most-watched/', MostWatchedContentView.as_view(),
+         name='most_watched_content'),
+    path('average-session-length/', AverageSessionLengthView.as_view(),
+         name='average_session_length'),
+    path('peak-viewing-times/', PeakViewingTimesView.as_view(),
+         name='peak_viewing_times'),
+    path('total-watch-duration/<int:content_id>/',
+         TotalWatchDurationView.as_view(), name='total_watch_duration'),
+    path('total-reviews/<int:content_id>/',
+         TotalReviewsView.as_view(), name='total_reviews'),
+    path('user-total-watch-statistics/<int:user_id>/',
+         UserTotalWatchStatisticsView.as_view(), name='user_total_watch_statistics'),
+    path('content-watch-count/<int:content_id>/',
+         ContentWatchCountView.as_view(), name='content_watch_count'),
+    path('last-watched-position/<int:user_id>/<int:content_id>/',
+         LastWatchedPositionView.as_view(), name='last_watched_position'),
+    path('streaming-quality-data/', StreamingQualityDataView.as_view(),
+         name='streaming_quality_data'),
+    path('user-session-data/', UserSessionDataView.as_view(),
+         name='user_session_data'),
 
-    # URL for total reviews and average rating of content
-    path('content/<int:content_id>/total-reviews/', TotalReviewsView.as_view()),
+    # POST Method
+    path('fetch-total-revenue/', FetchTotalRevenueView.as_view(),
+         name='fetch_total_revenue'),
+    path('fetch-revenue-by-plan/', FetchRevenueByPlanView.as_view(),
+         name='fetch_revenue_by_plan'),
+    path('fetch-arpu/', FetchARPUView.as_view(), name='fetch_arpu'),
+    path('fetch-transaction-rates/', FetchTransactionRatesView.as_view(),
+         name='fetch_transaction_rates'),
 
-    # URL for total revenue
-    path('revenue/total/', TotalRevenueView.as_view()),
+    #  USER SERVICE
+    path('all-users-statistics/',
+         UserStatisticsView.as_view(), name='user-statistics'),
+    path('banners/', BannerView.as_view(), name='banners'),
 ]

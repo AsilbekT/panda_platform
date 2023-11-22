@@ -1,7 +1,6 @@
-# schemas.py
-
 from pydantic import BaseModel
 from typing import Optional, Any
+from datetime import datetime
 
 
 class UserProfileCreate(BaseModel):
@@ -12,6 +11,7 @@ class UserProfileCreate(BaseModel):
     avatar: Optional[str] = None
     preferences: Optional[str] = None
     history: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

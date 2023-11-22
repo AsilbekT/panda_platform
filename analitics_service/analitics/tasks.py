@@ -1,5 +1,5 @@
 from celery import shared_task
-from .models import Review, UserActivity, UserWatchData
+from .models import BannerClick, BannerImpression, Review, StreamingQualityData, UserActivity, UserSessionData, UserWatchData
 from datetime import timedelta
 from django.utils import timezone
 from django.db import models
@@ -7,20 +7,24 @@ from django.db import models
 
 @shared_task
 def save_watch_data(user_id, content_id, watch_duration):
-    # If watch_duration is greater than a certain threshold, you might consider the content as fully watched.
-    # You need to know the total duration of the content to set this threshold accurately.
-    # Example threshold in seconds (e.g., 1 hour)
     threshold_for_full_watch = 3600
     fully_watched = watch_duration >= threshold_for_full_watch
 
-    obj, created = UserWatchData.objects.update_or_create(
+    # Check if the object exists
+    obj, created = UserWatchData.objects.get_or_create(
         user_id=user_id,
         content_id=content_id,
         defaults={
-            'watch_duration': models.F('watch_duration') + watch_duration,
+            'watch_duration': watch_duration,
             'fully_watched': fully_watched
         }
     )
+
+    # If the object already exists, update it
+    if not created:
+        obj.watch_duration = models.F('watch_duration') + watch_duration
+        obj.fully_watched = fully_watched
+        obj.save()
 
 
 @shared_task
@@ -44,4 +48,49 @@ def add_review(user_id, content_id, review_text, rating):
             'review_text': review_text,
             'rating': rating
         }
+    )
+
+
+@shared_task
+def process_streaming_quality_data(user_id, content_id, buffering_count, average_load_time):
+    try:
+        StreamingQualityData.objects.create(
+            user_id=user_id,
+            content_id=content_id,
+            buffering_count=buffering_count,
+            average_load_time=average_load_time
+        )
+    except Exception as e:
+        # Handle exceptions (logging, retrying, etc.)
+        pass
+
+
+@shared_task
+def process_user_session_data(user_id, session_start, session_end):
+    try:
+        UserSessionData.objects.create(
+            user_id=user_id,
+            session_start=session_start,
+            session_end=session_end
+        )
+    except Exception as e:
+        # Handle exceptions (logging, retrying, etc.)
+        pass
+
+
+@shared_task
+def save_banner_click(banner_id, user_id, page_url, device_info):
+    BannerClick.objects.create(
+        banner_id=banner_id,
+        user_id=user_id,
+        page_url=page_url,
+        device_info=device_info
+    )
+
+
+@shared_task
+def save_banner_impression(banner_id, user_id):
+    BannerImpression.objects.create(
+        banner_id=banner_id,
+        user_id=user_id
     )

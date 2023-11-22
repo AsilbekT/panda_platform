@@ -22,7 +22,9 @@ from subscription_plans.views import CompleteClickPaymentView, PrepareClickPayme
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('billing/', include("subscription_plans.urls")),
-    path('prepare/', PrepareClickPaymentView.as_view(), name='prepare_click_payment'),
-    path('complete/', CompleteClickPaymentView.as_view(), name='complete_click_payment'),
-
+    path('prepare/', PrepareClickPaymentView.as_view(),
+         name='prepare_click_payment'),
+    path('complete/', CompleteClickPaymentView.as_view(),
+         name='complete_click_payment'),
+    path('', include('billing_statistics.urls'))
 ]

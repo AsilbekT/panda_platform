@@ -18,6 +18,12 @@ router.add_api_route(
 )
 
 router.add_api_route(
+    path="/statistics",
+    endpoint=views.get_statistics,
+    methods=['GET']
+)
+
+router.add_api_route(
     path="/users",
     endpoint=views.update_profile,
     methods=['PUT']

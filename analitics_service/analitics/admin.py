@@ -1,7 +1,7 @@
 # admin.py
 
 from django.contrib import admin
-from .models import UserActivity, Review, UserWatchData
+from .models import BannerClick, BannerImpression, UserActivity, Review, UserWatchData
 
 
 @admin.register(UserActivity)
@@ -23,3 +23,20 @@ class WatchHistoryAdmin(admin.ModelAdmin):
     list_display = ('user_id', 'content_id', 'watch_duration', 'timestamp')
     list_filter = ('timestamp',)
     search_fields = ('user_id', 'content_id')
+
+
+class BannerClickAdmin(admin.ModelAdmin):
+    list_display = ('banner_id', 'clicked_at',
+                    'user_id', 'page_url', 'device_info')
+    list_filter = ('banner_id', 'clicked_at')
+    search_fields = ('user_id',)
+
+
+class BannerImpressionAdmin(admin.ModelAdmin):
+    list_display = ('banner_id', 'viewed_at', 'user_id')
+    list_filter = ('banner_id', 'viewed_at')
+    search_fields = ('user_id',)
+
+
+admin.site.register(BannerClick, BannerClickAdmin)
+admin.site.register(BannerImpression, BannerImpressionAdmin)

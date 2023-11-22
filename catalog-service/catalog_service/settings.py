@@ -47,7 +47,8 @@ INSTALLED_APPS = [
     'video_app',
     'video_api',
     'corsheaders',
-    'video_search'
+    'video_search',
+    'catalog_statistics'
 ]
 
 
