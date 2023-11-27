@@ -184,8 +184,12 @@ class Episode(models.Model):
     episode_number = models.IntegerField()
     title = models.CharField(max_length=255)
     duration_minute = models.IntegerField()
-    thumbnail_image_url = models.URLField(blank=True, null=True)
-
+    thumbnail_image = models.ImageField(
+        upload_to="episode_thumbnail_image/",
+        blank=True,
+        null=True,
+        validators=[validate_file_size, validate_image_file]
+    )
     episode_content_url = models.URLField(unique=True)
 
     class Meta:
