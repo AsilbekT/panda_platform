@@ -1,81 +1,77 @@
-from django.http import JsonResponse
-from django.db.models import Q
-from video_app.models import Movie, Series, Director, Genre
-from .utils import standardResponse
 from rest_framework.views import APIView
+from video_app.models import Movie, Series
+from video_app.utils import standardResponse, paginate_queryset
+from django.db.models import Q
 
 
-class GeneralSearch(APIView):
+class AdvancedSearch(APIView):
     def get(self, request):
+        # Search and filtering parameters
         query = request.GET.get('q', '')
+        genre = request.GET.get('genre', '')
+        director = request.GET.get('director', '')
+        min_rating = request.GET.get('min_rating', None)
+        max_rating = request.GET.get('max_rating', None)
+        start_year = request.GET.get('start_year', None)
+        end_year = request.GET.get('end_year', None)
 
-        movies = Movie.objects.filter(
-            Q(title__icontains=query)
-        ).distinct()
+        # Building the query for movies and series
+        movie_query = Q(title__icontains=query)
+        series_query = Q(title__icontains=query)
 
-        series = Series.objects.filter(
-            Q(title__icontains=query)
-        ).distinct()
+        if genre:
+            movie_query &= Q(genre__name__icontains=genre)
+            series_query &= Q(genre__name__icontains=genre)
+
+        if director:
+            movie_query &= Q(director__name__icontains=director)
+            series_query &= Q(director__name__icontains=director)
+
+        if min_rating:
+            movie_query &= Q(rating__gte=min_rating)
+            series_query &= Q(rating__gte=min_rating)
+
+        if max_rating:
+            movie_query &= Q(rating__lte=max_rating)
+            series_query &= Q(rating__lte=max_rating)
+
+        if start_year:
+            try:
+                start_year = int(start_year)
+                movie_query &= Q(release_date__year__gte=start_year)
+                series_query &= Q(release_date__year__gte=start_year)
+            except ValueError:
+                # Handle invalid start_year value
+                pass
+
+        if end_year:
+            try:
+                end_year = int(end_year)
+                movie_query &= Q(release_date__year__lte=end_year)
+                series_query &= Q(release_date__year__lte=end_year)
+            except ValueError:
+                # Handle invalid end_year value
+                pass
+
+        # Fetching results
+        movies = Movie.objects.filter(movie_query).distinct()
+        series = Series.objects.filter(series_query).distinct()
+
+        # Combining and paginating results
+        combined_results = list(movies) + list(series)
+        paginated_results, pagination_data = paginate_queryset(
+            combined_results, request)
 
         # Serialize the data
-        movies_list = [{
-            "id": movie.id,
-            "title": movie.title,
-            "release_date": movie.release_date,
-            "genre": [genre.name for genre in movie.genre.all()],
-            "director": movie.director.name,
-            "thumbnail": movie.thumbnail_image.url if movie.thumbnail_image else None,
-            "rating": movie.rating
-        } for movie in movies]
+        data_list = [{
+            "id": item.id,
+            "title": item.title,
+            "type": "Movie" if isinstance(item, Movie) else "Series",
+            "release_date": item.release_date,
+            "genre": [genre.name for genre in item.genre.all()],
+            "director": item.director.name,
+            "thumbnail": item.thumbnail_image.url if item.thumbnail_image else None,
+            "rating": item.rating
+        } for item in paginated_results]
 
-        series_list = [{
-            "id": serie.id,
-            "title": serie.title,
-            "release_date": serie.release_date,
-            "genre": [genre.name for genre in serie.genre.all()],
-            "director": serie.director.name,
-            "thumbnail": serie.thumbnail_image.url if serie.thumbnail_image else None,
-            "rating": serie.rating
-        } for serie in series]
-
-        data = {"movies": movies_list, "series": series_list}
-
-        return JsonResponse({"status": "success", "message": "Data fetched successfully", "data": data})
-
-
-class GenreSearch(APIView):
-    def get(self, request):
-        genres = request.GET.get('genres', '').split(',')
-        genres = [genre.strip() for genre in genres]
-
-        query = Q(genre__name__icontains=genres[0])
-        for genre in genres[1:]:
-            query |= Q(genre__name__icontains=genre)
-
-        movies = Movie.objects.filter(query).distinct()
-        series = Series.objects.filter(query).distinct()
-
-        # Serialize the data (similar to the GeneralSearch class)
-        movies_list = [{
-            "id": movie.id,
-            "title": movie.title,
-            "release_date": movie.release_date,
-            "genre": [genre.name for genre in movie.genre.all()],
-            "director": movie.director.name,
-            "thumbnail": movie.thumbnail_image.url if movie.thumbnail_image else None,
-            "rating": movie.rating
-        } for movie in movies]
-
-        series_list = [{
-            "id": serie.id,
-            "title": serie.title,
-            "release_date": serie.release_date,
-            "genre": [genre.name for genre in serie.genre.all()],
-            "director": serie.director.name,
-            "thumbnail": serie.thumbnail_image.url if serie.thumbnail_image else None,
-            "rating": serie.rating
-        } for serie in series]
-
-        data = {"movies": movies_list, "series": series_list}
-
-        return JsonResponse({"status": "success", "message": "Data fetched successfully", "data": data})
+        return standardResponse(status="success", message="Data fetched successfully", data=data_list, pagination=pagination_data)
