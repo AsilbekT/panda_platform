@@ -43,10 +43,10 @@ class BaseViewSet(viewsets.ModelViewSet):
 
         if isinstance(instance, (Movie, Series)):
             content_type = ContentType.objects.get_for_model(type(instance))
-            comments = Comment.objects.filter(
-                content_type=content_type, object_id=instance.id)
-
-            comment_serializer = CommentSerializer(comments, many=True)
+            top_level_comments = Comment.objects.filter(
+                content_type=content_type, object_id=instance.id, parent__isnull=True)
+            comment_serializer = CommentSerializer(
+                top_level_comments, many=True)
             serialized_data['comments'] = comment_serializer.data
 
         # Determine if the content is free

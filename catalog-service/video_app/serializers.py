@@ -346,12 +346,13 @@ class FavoriteContentSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     content_type = serializers.CharField(write_only=True)
+    replies = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
         fields = ['id', 'username', 'content', 'object_id',
-                  'content_type', 'parent', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at']
+                  'content_type', 'parent', 'created_at', 'updated_at', 'replies']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'replies']
 
     def validate_content_type(self, value):
         app_label = 'video_app'  # Assuming 'video_app' is the app label
@@ -372,3 +373,7 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_comment_count(self, obj):
         content_type = ContentType.objects.get_for_model(Movie)
         return Comment.objects.filter(content_type=content_type, object_id=obj.id).count()
+
+    def get_replies(self, obj):
+        replies = obj.replies.filter(parent=obj)
+        return CommentSerializer(replies, many=True).data
