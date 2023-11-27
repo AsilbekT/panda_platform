@@ -155,6 +155,7 @@ class SeriesListSerializer(serializers.ModelSerializer):
 class EpisodeSerializer(serializers.ModelSerializer):
     series_description = serializers.ReadOnlyField(source='series.description')
     series_genre_name = serializers.ReadOnlyField(source='series.genre.name')
+    thumbnail_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Episode
@@ -169,10 +170,16 @@ class EpisodeSerializer(serializers.ModelSerializer):
             'series_genre_name'
         ]
 
+    def get_thumbnail_image_url(self, obj):
+        request = self.context.get('request')
+        thumbnail_image_url = obj.thumbnail_image_url.url
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
+
 
 class EpisodeSerializerDetails(serializers.ModelSerializer):
     series_description = serializers.ReadOnlyField(source='series.description')
     series_genre_name = serializers.ReadOnlyField(source='series.genre.name')
+    thumbnail_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Episode
@@ -187,6 +194,11 @@ class EpisodeSerializerDetails(serializers.ModelSerializer):
             'series_description',
             'series_genre_name'
         ]
+
+    def get_thumbnail_image_url(self, obj):
+        request = self.context.get('request')
+        thumbnail_image_url = obj.thumbnail_image_url.url
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
 
 
 class SeasonSerializer(serializers.ModelSerializer):

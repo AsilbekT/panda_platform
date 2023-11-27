@@ -184,7 +184,7 @@ class Episode(models.Model):
     episode_number = models.IntegerField()
     title = models.CharField(max_length=255)
     duration_minute = models.IntegerField()
-    thumbnail_image = models.ImageField(
+    thumbnail_image_url = models.ImageField(
         upload_to="episode_thumbnail_image/",
         blank=True,
         null=True,
