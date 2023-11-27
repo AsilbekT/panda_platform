@@ -2,7 +2,7 @@ import requests
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 
-from video_app.serializers import CommentSerializer
+from video_app.serializers import CommentSerializer, FavoriteContentSerializer
 from .utils import standardResponse
 from .models import Episode, FavoriteContent, UserSubscription, Movie, Series, Comment, ContentType
 
@@ -139,22 +139,22 @@ class BaseViewSet(viewsets.ModelViewSet):
                 object_id=content_object.pk
             )
             if existing_favorite.exists():
-                return standardResponse(status='error', message='Content already added to favorites', data=status.HTTP_409_CONFLICT)
+                return standardResponse(status='error', message='Content already added to favorites', data={"content_id": content_object.pk})
 
             # Create a new favorite content entry
-            FavoriteContent.objects.create(
+            favorite = FavoriteContent.objects.create(
                 username=user_info['username'],
                 content_type=content_type,
                 object_id=content_object.pk
             )
-            return standardResponse(status='success', message='Added to favorites', data={})
+            return standardResponse(status='success', message='Added to favorites', data={"content_id": content_object.pk})
 
         except (Movie.DoesNotExist, Series.DoesNotExist):
             return standardResponse(status='error', message='Content not found', data=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return standardResponse(status='error', message=str(e), data=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    @action(detail=True, methods=['post'], url_path='remove-favorite')
+    @action(detail=True, methods=['delete'], url_path='remove-favorite')
     def remove_favorite(self, request, pk=None):
         content_type = request.data.get('content_type')
         try:
@@ -163,20 +163,25 @@ class BaseViewSet(viewsets.ModelViewSet):
                 return standardResponse(status='error', message='Invalid or expired token', data=status.HTTP_401_UNAUTHORIZED)
 
             # Fetch the content object based on type and ID
-            if content_type == 'movie':
+            if content_type == 'MOVIE':
                 content_object = Movie.objects.get(pk=pk)
-            elif content_type == 'series':
+            elif content_type == 'SERIES':
                 content_object = Series.objects.get(pk=pk)
             else:
                 return standardResponse(status='error', message='Invalid content type', data=status.HTTP_400_BAD_REQUEST)
 
+            content_type_model = ContentType.objects.get_for_model(
+                content_object.__class__)
+
             favorite = FavoriteContent.objects.filter(
                 username=user_info['username'],
-                content_object=content_object
+                content_type=content_type_model,
+                object_id=content_object.pk
             )
+
             if favorite.exists():
                 favorite.delete()
-                return standardResponse(status='success', message='Removed from favorites', data={})
+                return standardResponse(status='success', message='Removed from favorites', data={"content_id": content_object.pk})
             else:
                 return standardResponse(status='error', message='Favorite not found', data=status.HTTP_404_NOT_FOUND)
 

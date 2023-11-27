@@ -1,3 +1,4 @@
+from django.contrib.sites.shortcuts import get_current_site
 from rest_framework.views import APIView
 from video_app.models import Movie, Series
 from video_app.utils import standardResponse, paginate_queryset
@@ -70,8 +71,13 @@ class AdvancedSearch(APIView):
             "release_date": item.release_date,
             "genre": [genre.name for genre in item.genre.all()],
             "director": item.director.name,
-            "thumbnail": item.thumbnail_image.url if item.thumbnail_image else None,
+            "thumbnail": self.build_absolute_uri(item.thumbnail_image.url) if item.thumbnail_image else None,
             "rating": item.rating
         } for item in paginated_results]
 
         return standardResponse(status="success", message="Data fetched successfully", data=data_list, pagination=pagination_data)
+
+    def build_absolute_uri(self, relative_url):
+        current_site = get_current_site(self.request)
+        absolute_url = 'https://' + current_site.domain + relative_url
+        return absolute_url

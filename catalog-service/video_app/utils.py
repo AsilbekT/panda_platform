@@ -96,3 +96,15 @@ def decode_token(token):
     except InvalidTokenError:
         # Handle invalid token cases here (e.g., expired, malformed)
         return None
+
+
+def convert_to_https(url):
+    if url and url.startswith("http://"):
+        return url.replace("http://", "https://")
+    return url
+
+
+def ensure_https(url):
+    if not url.startswith('https://'):
+        return url.replace('http://', 'https://')
+    return url

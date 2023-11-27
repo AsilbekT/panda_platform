@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from video_app.utils import decode_token
+from video_app.utils import decode_token, ensure_https
 from .models import Catagory, Comment, FavoriteContent, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription
 from django.contrib.contenttypes.models import ContentType
 
@@ -30,7 +30,7 @@ class MovieSerializer(serializers.ModelSerializer):
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
         thumbnail_image_url = obj.thumbnail_image.url
-        return request.build_absolute_uri(thumbnail_image_url)
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
 
 
 class MovieDetailSerializer(serializers.ModelSerializer):
@@ -52,7 +52,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
         thumbnail_image_url = obj.thumbnail_image.url
-        return request.build_absolute_uri(thumbnail_image_url)
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
 
     def get_is_favorited(self, obj):
         # Get the user from the serializer context
@@ -90,13 +90,13 @@ class SeriesSerializer(serializers.ModelSerializer):
             'cast_list', 'rating', 'trailer_url', 'series_summary_url', 'number_of_seasons',
             'is_ready', 'is_premiere', 'has_trailer', 'is_free', 'is_featured', 'is_trending',
             'is_movie', 'category', 'conversion_type', 'available_under_plans', 'genre',
-            'director', 'thumbnail_image', 'seasons', 'is_favorited', 'main_content_url'
+            'director', 'thumbnail_image', 'seasons', 'main_content_url'
         ]
 
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
         thumbnail_image_url = obj.thumbnail_image.url
-        return request.build_absolute_uri(thumbnail_image_url)
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
 
     def get_seasons(self, obj):
         seasons = Season.objects.filter(series=obj)
@@ -128,7 +128,7 @@ class SeriesDetailSerializer(serializers.ModelSerializer):
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
         thumbnail_image_url = obj.thumbnail_image.url
-        return request.build_absolute_uri(thumbnail_image_url)
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
 
     def get_seasons(self, obj):
         seasons = Season.objects.filter(series=obj)
@@ -149,7 +149,7 @@ class SeriesListSerializer(serializers.ModelSerializer):
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
         thumbnail_image_url = obj.thumbnail_image.url
-        return request.build_absolute_uri(thumbnail_image_url)
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
 
 
 class EpisodeSerializer(serializers.ModelSerializer):
@@ -276,7 +276,7 @@ class HomeMovieSerializer(serializers.ModelSerializer):
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
         thumbnail_image_url = obj.thumbnail_image.url
-        return request.build_absolute_uri(thumbnail_image_url)
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
 
 
 class HomeSeriesSerializer(serializers.ModelSerializer):
@@ -295,7 +295,7 @@ class HomeSeriesSerializer(serializers.ModelSerializer):
     def get_thumbnail_image(self, obj):
         request = self.context.get('request')
         thumbnail_image_url = obj.thumbnail_image.url
-        return request.build_absolute_uri(thumbnail_image_url)
+        return ensure_https(request.build_absolute_uri(thumbnail_image_url))
 
 
 class CategorySerializer(serializers.ModelSerializer):

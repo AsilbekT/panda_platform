@@ -48,7 +48,6 @@ INSTALLED_APPS = [
     'video_api',
     'corsheaders',
     'video_search',
-    'catalog_statistics'
 ]
 
 
@@ -67,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'catalog_service.urls'
 

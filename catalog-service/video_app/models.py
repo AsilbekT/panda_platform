@@ -1,6 +1,6 @@
 from django.utils import timezone
 from django.db import models
-from .utils import validate_file_size, validate_image_file
+from .utils import convert_to_https, validate_file_size, validate_image_file
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils.text import slugify
@@ -227,7 +227,8 @@ class Banner(models.Model):
     @property
     def thumbnail_image_url(self):
         if self.content_object and hasattr(self.content_object, 'thumbnail_image'):
-            return self.content_object.thumbnail_image.url if self.content_object.thumbnail_image else None
+            url = self.content_object.thumbnail_image.url if self.content_object.thumbnail_image else None
+            return convert_to_https(url)
         return None
 
     @property
