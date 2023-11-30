@@ -29,6 +29,7 @@ urlpatterns = [
     path('', include('video_api.urls')),
     path('', include('video_app.urls')),
     path('', include('video_search.urls')),
+    path('management/', include('catalog_management_app.urls')),
 ]
 
 if settings.DEBUG:
