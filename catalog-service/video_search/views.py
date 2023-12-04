@@ -1,3 +1,4 @@
+from django.db.models.functions import ExtractYear
 from django.contrib.sites.shortcuts import get_current_site
 from rest_framework.views import APIView
 from video_app.models import Movie, Series
@@ -74,10 +75,24 @@ class AdvancedSearch(APIView):
             "thumbnail": self.build_absolute_uri(item.thumbnail_image.url) if item.thumbnail_image else None,
             "rating": item.rating
         } for item in paginated_results]
-
-        return standardResponse(status="success", message="Data fetched successfully", data=data_list, pagination=pagination_data)
+        return standardResponse(status="success", message="Data fetched successfully", data={"content": data_list, "pagination": pagination_data})
 
     def build_absolute_uri(self, relative_url):
         current_site = get_current_site(self.request)
         absolute_url = 'https://' + current_site.domain + relative_url
         return absolute_url
+
+
+class AvailableYearsView(APIView):
+    def get(self, request):
+        movie_years = Movie.objects.annotate(year=ExtractYear(
+            'release_date')).values_list('year', flat=True).distinct()
+        series_years = Series.objects.annotate(year=ExtractYear(
+            'release_date')).values_list('year', flat=True).distinct()
+        combined_years = set(list(movie_years) + list(series_years))
+        available_years = sorted(list(combined_years))
+
+        data = {
+            "available_years": available_years
+        }
+        return standardResponse(status="success", message="Data fetched successfully", data=data)
