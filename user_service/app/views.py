@@ -1,6 +1,7 @@
 from sqlalchemy import extract
 from sqlalchemy import func, and_
 import traceback
+import httpx
 from fastapi import HTTPException, Depends, Security
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +14,8 @@ from .database import get_db
 from .schemas import UserProfileCreate, StandardResponse
 from sqlalchemy.future import select
 from sqlalchemy import or_
+AUTH_SERVICE_VERIFY_TOKEN_URL = "http://127.0.0.1:8001/auth/verify-token"
+
 
 api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
 
@@ -31,6 +34,23 @@ def get_token_from_header(authorization: str = Depends(api_key_header)) -> str:
     except ValueError:
         raise HTTPException(
             status_code=401, detail="Invalid authorization header")
+
+
+def verify_token_and_session_with_auth_service(token: str):
+    headers = {"Authorization": f"Bearer {token}"}
+    with httpx.Client() as client:
+        try:
+            response = client.get(
+                AUTH_SERVICE_VERIFY_TOKEN_URL, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            if not data.get("status", 'success'):
+                raise HTTPException(status_code=401, detail="Inactive session")
+            # You can add more checks based on the response structure
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code,
+                                detail="Auth service token verification failed")
+# eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIyLCJ1c2VybmFtZSI6ImFzaWxiZWszIiwic2Vzc2lvbl9pZCI6MTIsImV4cCI6MTcwMzc5MDU2NH0.NqnGhM2WGDLX-Z0fy4njTMAOfvSJsH9psxA6sAZRdYY
 
 
 async def create_profile(profile: UserProfileCreate, db: AsyncSession = Depends(get_db)) -> StandardResponse:
@@ -69,7 +89,10 @@ async def create_profile(profile: UserProfileCreate, db: AsyncSession = Depends(
 
 
 async def get_profile(token: str = Depends(get_token_from_header), db: AsyncSession = Depends(get_db)) -> StandardResponse:
+    verify_token_and_session_with_auth_service(token)
+
     try:
+        print(token)
         token_data = decode_jwt_token(token)
     except Exception as e:
         print(f"An error occurred while decoding the token: {e}")
