@@ -22,8 +22,8 @@ CELERY_RESULT_BACKEND = 'rpc://'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-BILLING_SERVICE_URL = "http://127.0.0.1:8001/"
-USER_SERVICE_URL = "http://127.0.0.1:8003/"
+BILLING_SERVICE_URL = "http://127.0.0.1:8002/"
+USER_SERVICE_URL = "http://127.0.0.1:8001/"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -34,7 +34,7 @@ SECRET_KEY = 'django-insecure-urzpdf$pm991$e@q((vmw-=uq1yqvg6#u@gs5$4u%kkoww@pap
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -90,7 +90,11 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
-
+REST_FRAMEWORK = {
+    # ... other settings ...
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators

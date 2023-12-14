@@ -19,13 +19,15 @@ from .views import (
     FetchTotalRevenueView,
     FetchRevenueByPlanView,
     FetchARPUView,
-    FetchTransactionRatesView
+    FetchTransactionRatesView,
+    UserWatchHistoryView
 )
 
 urlpatterns = [
     path('user-watch-data/', UserWatchDataView.as_view(), name='user_watch_data'),
     path('user-activity/', UserActivityView.as_view(), name='user_activity'),
     path('review/', ReviewView.as_view(), name='review'),
+
     path('content-likes-count/<int:content_id>/',
          ContentLikesCountView.as_view(), name='content_likes_count'),
     path('most-watched/', MostWatchedContentView.as_view(),
@@ -44,12 +46,12 @@ urlpatterns = [
          ContentWatchCountView.as_view(), name='content_watch_count'),
     path('last-watched-position/<int:user_id>/<int:content_id>/',
          LastWatchedPositionView.as_view(), name='last_watched_position'),
+    path('user-watch-history/<int:user_id>/',
+         UserWatchHistoryView.as_view(), name='user-watch-history'),
     path('streaming-quality-data/', StreamingQualityDataView.as_view(),
          name='streaming_quality_data'),
     path('user-session-data/', UserSessionDataView.as_view(),
          name='user_session_data'),
-
-    # POST Method
     path('fetch-total-revenue/', FetchTotalRevenueView.as_view(),
          name='fetch_total_revenue'),
     path('fetch-revenue-by-plan/', FetchRevenueByPlanView.as_view(),

@@ -66,16 +66,24 @@ def process_streaming_quality_data(user_id, content_id, buffering_count, average
 
 
 @shared_task
-def process_user_session_data(user_id, session_start, session_end):
-    try:
-        UserSessionData.objects.create(
-            user_id=user_id,
-            session_start=session_start,
-            session_end=session_end
-        )
-    except Exception as e:
-        # Handle exceptions (logging, retrying, etc.)
-        pass
+def process_user_session_data(user_id, session_start, session_end=None):
+    # If session_end is not provided, it means the session has just started
+    if session_end is None:
+        session_end = session_start  # Initially, set session_end equal to session_start
+
+    # Check if a session already exists for the given start time
+    session, created = UserSessionData.objects.get_or_create(
+        user_id=user_id,
+        session_start=session_start,
+        defaults={
+            'session_end': session_end
+        }
+    )
+
+    # If the session already exists and we have a session_end time, update it
+    if not created and session_end:
+        session.session_end = session_end
+        session.save()
 
 
 @shared_task

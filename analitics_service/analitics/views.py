@@ -1,12 +1,13 @@
 from rest_framework import status
 from django.conf import settings
+from analitics.pagination import StandardResultsSetPagination
 from analitics.utils import standard_response
 from .serializers import BannerClickSerializer, BannerImpressionSerializer, StreamingQualityDataSerializer, UserSessionDataSerializer, UserWatchDataSerializer, UserActivitySerializer, ReviewSerializer
 from .tasks import process_streaming_quality_data, process_user_session_data, save_banner_click, save_banner_impression, save_watch_data, add_user_activity, add_review
 from django.db.models import Avg, Sum, Count, F, Case, When, FloatField
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import ActivityType, BannerClick, BannerImpression, ContentRevenue, Review, UserActivity, UserWatchData
+from .models import ActivityType, BannerClick, BannerImpression, ContentRevenue, Review, UserActivity, UserSessionData, UserWatchData
 import requests
 from rest_framework.views import APIView
 from django.db.models.functions import ExtractHour
@@ -151,7 +152,17 @@ class UserSessionDataView(APIView):
         return standard_response(False, 'Invalid data', serializer.errors, status.HTTP_400_BAD_REQUEST)
 
 
+class UserSessionHistoryView(APIView):
+    def get(self, request, user_id):
+        sessions = UserSessionData.objects.filter(
+            user_id=user_id).order_by('-session_start')
+        serializer = UserSessionDataSerializer(sessions, many=True)
+        return Response(serializer.data)
+
+
 # Billing data
+
+
 class FetchTotalRevenueView(APIView):
     """
     Billing service
@@ -361,3 +372,21 @@ class BannerView(APIView):
             }
 
         return Response({'banner_statistics': combined_statistics})
+
+
+class UserWatchHistoryView(APIView):
+    pagination_class = StandardResultsSetPagination
+
+    def get(self, request, user_id):
+        watch_history = UserWatchData.objects.filter(
+            user_id=user_id).order_by('-timestamp')
+
+        # Apply pagination
+        page = self.pagination_class().paginate_queryset(watch_history, request)
+        if page is not None:
+            serializer = UserWatchDataSerializer(page, many=True)
+            return self.pagination_class().get_paginated_response(serializer.data)
+
+        # Fallback if pagination is not applicable
+        serializer = UserWatchDataSerializer(watch_history, many=True)
+        return Response(serializer.data)
