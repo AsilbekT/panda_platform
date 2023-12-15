@@ -33,6 +33,12 @@ class LogoutSessionRequest(BaseModel):
     session_id: int
 
 
+class ChangePasswordRequest(BaseModel):
+    username: str
+    current_password: str
+    new_password: str
+
+
 async def register(user: UserCreate, db: Session = Depends(get_db)) -> StandardResponse:
     # Check if the user with the given username or phone number already exists
     existing_user = db.query(User).filter(
@@ -214,3 +220,22 @@ async def logout_session(request: LogoutSessionRequest, token: str = Depends(get
     db.commit()
 
     return StandardResponse(status="success", message="Logged out from the session successfully", data={})
+
+
+async def change_password(request: ChangePasswordRequest, db: Session = Depends(get_db)) -> StandardResponse:
+    user = db.query(User).filter(User.username == request.username).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(request.current_password, user.password_hash):
+        raise HTTPException(
+            status_code=400, detail="Incorrect current password")
+
+    # Here, add additional checks for new password strength if needed
+
+    hashed_new_password = hash_password(request.new_password)
+    user.password_hash = hashed_new_password
+    db.commit()
+
+    return StandardResponse(status="success", message="Password changed successfully")
