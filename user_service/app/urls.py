@@ -34,3 +34,9 @@ router.add_api_route(
     endpoint=views.delete_profile,
     methods=['DELETE']
 )
+
+router.add_api_route(
+    path="/allusers",
+    endpoint=views.get_all_users,
+    methods=['GET']
+)

@@ -1,8 +1,9 @@
+from fastapi_pagination import Page
 from sqlalchemy import extract
 from sqlalchemy import func, and_
 import traceback
 import httpx
-from fastapi import HTTPException, Depends, Security
+from fastapi import HTTPException, Depends, Security, UploadFile
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func
@@ -11,13 +12,22 @@ from datetime import timedelta, datetime
 from app.utils import decode_jwt_token
 from .models import UserProfile
 from .database import get_db
-from .schemas import UserProfileCreate, StandardResponse
+from .schemas import UserProfileCreate, StandardResponse, UserProfileList
 from sqlalchemy.future import select
 from sqlalchemy import or_
-AUTH_SERVICE_VERIFY_TOKEN_URL = "http://127.0.0.1:8001/auth/verify-token"
+from .utils import delete_avatar_file, save_avatar_file
+from fastapi_pagination.ext.sqlalchemy import paginate
+
+
+AUTH_SERVICE_VERIFY_TOKEN_URL = "http://127.0.0.1:8000/auth/verify-token"
 
 
 api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
+
+
+async def get_all_users(db: AsyncSession = Depends(get_db)) -> Page[UserProfileList]:
+    query = select(UserProfile)
+    return await paginate(db, query)
 
 
 def get_token_from_header(authorization: str = Depends(api_key_header)) -> str:
@@ -80,11 +90,16 @@ async def create_profile(profile: UserProfileCreate, db: AsyncSession = Depends(
         preferences=profile.preferences,
         history=profile.history
     )
+    if db_profile.avatar:
+        if db_profile.avatar.size > 1_000_000:  # 1MB size limit
+            raise HTTPException(
+                status_code=400, detail="Avatar file size exceeds 1MB limit")
+        avatar_path = await save_avatar_file(profile.avatar)
+        db_profile.avatar = avatar_path
 
     db.add(db_profile)
     await db.commit()
     await db.refresh(db_profile)
-
     return StandardResponse(status="success", message="User created successfully")
 
 
@@ -109,35 +124,61 @@ async def get_profile(token: str = Depends(get_token_from_header), db: AsyncSess
 
 
 async def update_profile(profile_update: UserProfileCreate, token: str = Depends(get_token_from_header), db: AsyncSession = Depends(get_db)) -> StandardResponse:
+    # Decode the JWT token to get the username
     token_data = decode_jwt_token(token)
     username = token_data['username']
+
+    # Retrieve the existing user profile from the database
     result = await db.execute(select(UserProfile).filter(UserProfile.username == username))
     db_profile = result.scalar_one_or_none()
 
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    for key, value in profile_update.dict().items():
+    # Update profile fields from the provided data
+    for key, value in profile_update.dict(exclude_unset=True).items():
+        # Check if the field exists on the model and is not None
         if hasattr(db_profile, key) and value is not None:
             setattr(db_profile, key, value)
 
+    # Handle avatar upload
+    if profile_update.avatar and isinstance(profile_update.avatar, UploadFile):
+        if profile_update.avatar.size > 1_000_000:  # 1MB size limit
+            raise HTTPException(
+                status_code=400, detail="Avatar file size exceeds 1MB limit")
+
+        avatar_path = await save_avatar_file(profile_update.avatar)
+        db_profile.avatar = avatar_path
+
+    # Commit the updates to the database
     await db.commit()
     await db.refresh(db_profile)
-    response_data = UserProfileCreate.from_orm(
-        db_profile)  # Use your response model here
+
+    # Prepare the response
+    response_data = UserProfileCreate.from_orm(db_profile)
     return StandardResponse(status="success", message="Profile updated successfully", data=response_data)
 
 
 async def delete_profile(token: str = Depends(get_token_from_header), db: AsyncSession = Depends(get_db)) -> StandardResponse:
+    # Decode token to get username
     token_data = decode_jwt_token(token)
     username = token_data['username']
+
+    # Fetch the user profile
     result = await db.execute(select(UserProfile).filter(UserProfile.username == username))
     db_profile = result.scalar_one_or_none()
+
     if db_profile is None:
         raise HTTPException(status_code=404, detail="Profile not found")
 
+    # Check if the profile has an avatar and delete the avatar file
+    if db_profile.avatar:
+        await delete_avatar_file(db_profile.avatar)
+
+    # Delete the profile from the database
     await db.delete(db_profile)
     await db.commit()
+
     return StandardResponse(status="success", message="Profile deleted successfully")
 
 
