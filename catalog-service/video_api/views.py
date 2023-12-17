@@ -76,7 +76,7 @@ class VideoUploadView(View):
             }
 
             response = requests.post(
-                "videoconversion.inminternational.uz/convert", json=data)
+                "http://127.0.0.1:8000/convert", json=data)
             if response.status_code == 200:
                 return JsonResponse({'status': 'success', 'message': 'Video uploaded and conversion initiated', 'video_url': full_file_path})
             else:
