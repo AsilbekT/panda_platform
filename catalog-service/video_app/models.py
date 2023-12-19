@@ -94,6 +94,7 @@ class Content(models.Model):
         Director, on_delete=models.CASCADE, related_name="%(class)s_contents")
     cast_list = models.TextField(blank=True, null=True)
     rating = models.FloatField(blank=True, null=True)
+    is_mobile_only = models.BooleanField(default=False)
 
     thumbnail_image = models.ImageField(
         upload_to="thumbnail_image/",

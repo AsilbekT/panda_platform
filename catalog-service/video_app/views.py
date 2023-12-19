@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from video_app.utils import decode_token, standardResponse, user_has_active_plan
+from video_app.utils import MobileOnlyMixin, decode_token, standardResponse, user_has_active_plan
 from .models import Catagory, Comment, Content, FavoriteContent, Genre, Director, Movie, Season, Series, Episode, Banner, SubscriptionPlan, UserSubscription, ContentType
 from .serializers import (
     CategorySerializer,
@@ -42,15 +42,14 @@ class DirectorViewSet(BaseViewSet):
     serializer_class = DirectorSerializer
 
 
-class MovieViewSet(BaseViewSet):
+class MovieViewSet(MobileOnlyMixin, BaseViewSet):
     serializer_class = MovieSerializer
 
     def get_queryset(self):
-        """
-        This view should return a list of all the movies
-        that are marked as ready.
-        """
-        return Movie.objects.filter(is_ready=True)
+        queryset = Movie.objects.filter(is_ready=True)
+        if not self.is_request_from_mobile(self.request):
+            queryset = queryset.filter(is_mobile_only=False)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -78,14 +77,19 @@ class MovieViewSet(BaseViewSet):
         return standardResponse(status="success", message="Movies retrieved", data=serializer.data, pagination=pagination_data)
 
 
-class SeriesViewSet(BaseViewSet):
+class SeriesViewSet(MobileOnlyMixin, BaseViewSet):
     serializer_class = SeriesSerializer
 
     def get_queryset(self):
         queryset = Series.objects.filter(is_ready=True).order_by('id')
         genre_from_param = self.request.query_params.get('genre', None)
+
+        if not self.is_request_from_mobile(self.request):
+            queryset = queryset.filter(is_mobile_only=False)
+
         if genre_from_param:
             queryset = queryset.filter(genre_id=genre_from_param)
+
         return queryset
 
     def get_serializer_class(self):
@@ -107,8 +111,14 @@ class SeriesViewSet(BaseViewSet):
         return standardResponse(status="success", message="Series retrieved", data=serializer.data, pagination=pagination_data)
 
 
-class EpisodeViewSet(BaseViewSet):
+class EpisodeViewSet(MobileOnlyMixin, BaseViewSet):
     queryset = Episode.objects.all().order_by('series', 'season', 'episode_number')
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if not self.is_request_from_mobile(self.request):
+            queryset = queryset.filter(series__is_mobile_only=False)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list':

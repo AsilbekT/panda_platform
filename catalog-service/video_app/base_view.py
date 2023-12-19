@@ -190,3 +190,16 @@ class BaseViewSet(viewsets.ModelViewSet):
             return standardResponse(status='error', message='Content not found', data=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return standardResponse(status='error', message=str(e), data=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class MobileOnlyMixin:
+    def dispatch(self, request, *args, **kwargs):
+        is_mobile = self.is_request_from_mobile(request)
+        if not is_mobile and self.get_queryset().filter(is_mobile_only=True).exists():
+            return standardResponse(status='error', message='This content is only available on mobile devices.')
+        return super().dispatch(request, *args, **kwargs)
+
+    def is_request_from_mobile(self, request):
+        # Simple check. Can be enhanced based on User-Agent or custom headers
+        user_agent = request.headers.get('User-Agent', '').lower()
+        return 'mobile' in user_agent
