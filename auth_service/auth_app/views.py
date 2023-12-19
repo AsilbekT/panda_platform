@@ -1,6 +1,7 @@
 from fastapi import HTTPException, Header, Depends, Request, Query
 from .models import User, UserSession
 from .utils import (
+    SERVICES,
     hash_password,
     create_jwt_token,
     verify_jwt_token,
@@ -39,6 +40,13 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
+def get_token(authorization: str = Header(None)) -> str:
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization[7:]
+        return token
+    raise HTTPException(status_code=401, detail="Invalid token")
+
+
 async def register(user: UserCreate, db: Session = Depends(get_db)) -> StandardResponse:
     # Check if the user with the given username or phone number already exists
     existing_user = db.query(User).filter(
@@ -57,7 +65,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)) -> StandardR
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
-    url = "http://127.0.0.1:8000/users"
+    url = SERVICES['userservice'] + "/users"
 
     # Username to send (assuming user.username is defined elsewhere in your code)
     data = {
@@ -120,11 +128,35 @@ async def login(request: Request, user: UserLogin, db: Session = Depends(get_db)
     )
 
 
-def get_token(authorization: str = Header(None)) -> str:
-    if authorization and authorization.startswith("Bearer "):
-        token = authorization[7:]
-        return token
-    raise HTTPException(status_code=401, detail="Invalid token")
+async def delete_user(token: str = Depends(get_token), db: Session = Depends(get_db)) -> StandardResponse:
+    # Retrieve the user
+    payload = verify_jwt_token(token)
+    username = payload.get("username")
+
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Delete the user's sessions
+    db.query(UserSession).filter(UserSession.username == username).delete()
+
+    # Invalidate any tokens associated with the user
+    # (Assuming you have a way to retrieve all tokens for a user)
+
+    # Send request to another service about user deletion
+    url = SERVICES['userservice'] + "/users"  # Adjust URL as needed
+    headers = {'Authorization': f'Bearer {token}'}
+
+    # Send a DELETE request to another service about user deletion
+    response = httpx.delete(url, headers=headers)
+
+    if response.status_code != 200:
+        invalidate_token(token)
+        # Delete the user
+        db.delete(user)
+        db.commit()
+        return StandardResponse(status="error", message="Failed to notify external service about user deletion")
+    return StandardResponse(status="success", message="User deleted successfully")
 
 
 async def logout(token: str = Depends(get_token), db: Session = Depends(get_db)) -> StandardResponse:

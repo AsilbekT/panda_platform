@@ -8,6 +8,13 @@ from fastapi import HTTPException
 import redis
 
 # Configure these with your Redis server details
+SERVICES = {
+    "userservice": "http://127.0.0.1:8001",
+    "catalogservice": "https://catalogservice.inminternational.uz",
+    "billingservice": "https://billingservice.inminternational.uz",
+    "videoconversion": "http://127.0.0.1:8000"
+}
+
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 REDIS_DB = 0
