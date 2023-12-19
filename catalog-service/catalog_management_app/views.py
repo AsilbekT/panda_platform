@@ -16,11 +16,15 @@ from .serializers import (
 from video_app.utils import paginate_queryset
 
 from video_app.utils import *
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 
 class CatagorySerializerViewSet(viewsets.ModelViewSet):
-    queryset = Catagory.objects.all()
+    queryset = Catagory.objects.all().order_by("id")
     serializer_class = CatagorySerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -40,8 +44,10 @@ class CatagorySerializerViewSet(viewsets.ModelViewSet):
 
 
 class FavoriteContentViewSet(viewsets.ModelViewSet):
-    queryset = FavoriteContent.objects.all()
+    queryset = FavoriteContent.objects.all().order_by("id")
     serializer_class = FavoriteContentPlanSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -61,8 +67,10 @@ class FavoriteContentViewSet(viewsets.ModelViewSet):
 
 
 class VideoConversionTypeViewSet(viewsets.ModelViewSet):
-    queryset = VideoConversionType.objects.all()
+    queryset = VideoConversionType.objects.all().order_by("id")
     serializer_class = VideoConversionTypeSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -82,8 +90,10 @@ class VideoConversionTypeViewSet(viewsets.ModelViewSet):
 
 
 class GenreViewSet(viewsets.ModelViewSet):
-    queryset = Genre.objects.all()
+    queryset = Genre.objects.all().order_by("id")
     serializer_class = GenreSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -103,8 +113,10 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 
 class DirectorViewSet(viewsets.ModelViewSet):
-    queryset = Director.objects.all()
+    queryset = Director.objects.all().order_by("id")
     serializer_class = DirectorSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -124,8 +136,10 @@ class DirectorViewSet(viewsets.ModelViewSet):
 
 
 class MovieViewSet(viewsets.ModelViewSet):
-    queryset = Movie.objects.all()
+    queryset = Movie.objects.all().order_by("id")
     serializer_class = MovieSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -148,8 +162,10 @@ class MovieViewSet(viewsets.ModelViewSet):
 
 
 class SeriesViewSet(viewsets.ModelViewSet):
-    queryset = Series.objects.all()
+    queryset = Series.objects.all().order_by("id")
     serializer_class = SeriesSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -169,8 +185,10 @@ class SeriesViewSet(viewsets.ModelViewSet):
 
 
 class SeasonViewSet(viewsets.ModelViewSet):
-    queryset = Season.objects.all()
+    queryset = Season.objects.all().order_by("id")
     serializer_class = SeasonSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -190,8 +208,10 @@ class SeasonViewSet(viewsets.ModelViewSet):
 
 
 class EpisodeViewSet(viewsets.ModelViewSet):
-    queryset = Episode.objects.all()
+    queryset = Episode.objects.all().order_by("id")
     serializer_class = EpisodeSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -211,8 +231,10 @@ class EpisodeViewSet(viewsets.ModelViewSet):
 
 
 class BannerViewSet(viewsets.ModelViewSet):
-    queryset = Banner.objects.all()
+    queryset = Banner.objects.all().order_by("id")
     serializer_class = BannerSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -232,8 +254,10 @@ class BannerViewSet(viewsets.ModelViewSet):
 
 
 class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
+    queryset = Comment.objects.all().order_by("id")
     serializer_class = CommentSerializer
+    authentication_classes = [JWTAuthentication]  # JWT Authentication
+    permission_classes = [IsAuthenticated]  # Permission class
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())

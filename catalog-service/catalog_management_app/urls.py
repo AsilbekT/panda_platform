@@ -16,5 +16,6 @@ router.register(r'banners', BannerViewSet)
 router.register(r'comments', CommentViewSet)
 
 urlpatterns = [
+    path('', include("catalog_management_app.auth.urls")),
     path('', include(router.urls)),
 ]
