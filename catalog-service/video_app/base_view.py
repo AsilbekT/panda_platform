@@ -1,6 +1,7 @@
 import requests
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from catalog_service.settings import SERVICES
 
 from video_app.serializers import CommentSerializer, FavoriteContentSerializer
 from .utils import standardResponse
@@ -17,7 +18,7 @@ class BaseViewSet(viewsets.ModelViewSet):
         headers = {'Authorization': f'Bearer {token}'}
 
         response = requests.get(
-            'https://authservice.inminternational.uz/auth/verify-token', headers=headers)
+            SERVICES['authservice'] + '/auth/verify-token', headers=headers)
 
         # For debugging purposes; remove or comment out in production
         return response.status_code == 200, response.json()['data'], token

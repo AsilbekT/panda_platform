@@ -43,8 +43,14 @@ class DirectorViewSet(BaseViewSet):
 
 
 class MovieViewSet(BaseViewSet):
-    queryset = Movie.objects.all().order_by('id')
-    # check_user_subscriptions()
+    serializer_class = MovieSerializer
+
+    def get_queryset(self):
+        """
+        This view should return a list of all the movies
+        that are marked as ready.
+        """
+        return Movie.objects.filter(is_ready=True)
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -54,9 +60,13 @@ class MovieViewSet(BaseViewSet):
         return MovieSerializer
 
     def list(self, request, *args, **kwargs):
-        genre_from_param = self.request.query_params.get('genre', None)
-        queryset = self.queryset.filter(
-            genre_id=genre_from_param) if genre_from_param else self.queryset
+        genre_from_param = request.query_params.get('genre', None)
+        queryset = self.get_queryset().filter(
+            genre_id=genre_from_param) if genre_from_param else self.get_queryset()
+
+        # Ensure the queryset is ordered
+        # or any other field you want to order by
+        queryset = queryset.order_by('id')
 
         paginated_queryset, pagination_data = paginate_queryset(
             queryset, request)
@@ -72,7 +82,7 @@ class SeriesViewSet(BaseViewSet):
     serializer_class = SeriesSerializer
 
     def get_queryset(self):
-        queryset = Series.objects.all().order_by('id')
+        queryset = Series.objects.filter(is_ready=True).order_by('id')
         genre_from_param = self.request.query_params.get('genre', None)
         if genre_from_param:
             queryset = queryset.filter(genre_id=genre_from_param)
@@ -107,9 +117,16 @@ class EpisodeViewSet(BaseViewSet):
             return EpisodeSerializerDetails
         return EpisodeSerializer
 
-    def list(self, request, series_id=None, *args, **kwargs):
-        queryset = self.queryset.filter(
-            series_id=series_id) if series_id else self.queryset
+    def list(self, request, *args, **kwargs):
+        series_id = kwargs.get('series_pk')
+        season_id = kwargs.get('season_pk')
+
+        # Filter queryset based on series_id, season_id and is_ready
+        queryset = self.queryset.filter(is_ready=True)
+        if series_id:
+            queryset = queryset.filter(series_id=series_id)
+        if season_id:
+            queryset = queryset.filter(season_id=season_id)
 
         paginated_queryset, pagination_data = paginate_queryset(
             queryset, request)
@@ -118,7 +135,7 @@ class EpisodeViewSet(BaseViewSet):
 
         serializer = EpisodeSerializer(
             paginated_queryset, many=True, context={'request': request})
-        return standardResponse(status="success", message="Episodes retrieved", data=serializer.data, pagination=pagination_data)
+        return standardResponse(status="success", message="Episodes retrieved", data={'episodes': serializer.data, 'pagination': pagination_data})
 
 
 class SeasonViewSet(BaseViewSet):

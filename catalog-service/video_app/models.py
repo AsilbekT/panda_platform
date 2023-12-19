@@ -38,6 +38,7 @@ class VideoConversionType(models.Model):
         ('MOVIE_TRAILER', 'Movie Trailer'),
         ('SERIES', 'Series'),
         ('SERIES_TRAILER', 'Series Trailer'),
+        ('EPISODE', 'Episode'),
     ]
 
     video_type = models.CharField(
@@ -191,6 +192,9 @@ class Episode(models.Model):
         validators=[validate_file_size, validate_image_file]
     )
     episode_content_url = models.URLField(unique=True)
+    is_ready = models.BooleanField(default=False)
+    conversion_type = models.ForeignKey(
+        VideoConversionType, on_delete=models.SET_NULL, null=True, related_name='episodes')
 
     class Meta:
         db_table = 'episode_table'

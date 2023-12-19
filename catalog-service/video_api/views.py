@@ -7,6 +7,7 @@ import os
 
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from catalog_service.settings import SERVICES
 
 from video_app.models import Content, VideoConversionType
 from django.core.exceptions import ObjectDoesNotExist
@@ -25,7 +26,7 @@ class VideoUploadView(View):
         headers = {'Authorization': f'Bearer {token}'}
 
         response = requests.get(
-            'https://authservice.inminternational.uz/auth/verify-token', headers=headers)
+            SERVICES['authservice'] + '/auth/verify-token', headers=headers)
 
         # For debugging purposes; remove or comment out in production
         return response.status_code == 200
@@ -45,12 +46,16 @@ class VideoUploadView(View):
 
         try:
             content = model_class.objects.get(pk=content_id)
-            video_type = content.conversion_type.video_type
-            if is_trailer:
-                video_type = f"{video_type}_TRAILER"
+            if hasattr(content, 'conversion_type'):
+                video_type = content.conversion_type.video_type
+                if is_trailer:
+                    video_type = f"{video_type}_TRAILER"
+            else:
+                # Handle the case for Episode or other models without conversion_type
+                video_type = 'EPISODE' if isinstance(
+                    content, Episode) else 'UNKNOWN_TYPE'
         except ObjectDoesNotExist:
             return JsonResponse({'status': 'failed', 'message': 'Content does not exist.'})
-
         if video:
             # Define a custom directory path relative to MEDIA_ROOT
             custom_directory_path = os.path.join(
@@ -74,9 +79,8 @@ class VideoUploadView(View):
                 'content_id': content_id,
                 'video_type': video_type,
             }
-
             response = requests.post(
-                "http://127.0.0.1:8000/convert", json=data)
+                SERVICES['videoconversion'] + "/convert", json=data)
             if response.status_code == 200:
                 return JsonResponse({'status': 'success', 'message': 'Video uploaded and conversion initiated', 'video_url': full_file_path})
             else:
