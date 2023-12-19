@@ -15,11 +15,8 @@ from .database import get_db
 from .schemas import UserProfileCreate, StandardResponse, UserProfileList
 from sqlalchemy.future import select
 from sqlalchemy import or_
-from .utils import delete_avatar_file, save_avatar_file
+from .utils import SERVICES, delete_avatar_file, save_avatar_file
 from fastapi_pagination.ext.sqlalchemy import paginate
-
-
-AUTH_SERVICE_VERIFY_TOKEN_URL = "http://127.0.0.1:8000/auth/verify-token"
 
 
 api_key_header = APIKeyHeader(name="Authorization", auto_error=False)
@@ -51,7 +48,7 @@ def verify_token_and_session_with_auth_service(token: str):
     with httpx.Client() as client:
         try:
             response = client.get(
-                AUTH_SERVICE_VERIFY_TOKEN_URL, headers=headers)
+                SERVICES['authservice'] + "/auth/verify-token", headers=headers)
             response.raise_for_status()
             data = response.json()
             if not data.get("status", 'success'):
