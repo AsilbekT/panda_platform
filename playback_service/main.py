@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pathlib import Path
 from fastapi.middleware.cors import CORSMiddleware
+from uuid import UUID
+
 
 app = FastAPI()
 
@@ -16,11 +18,13 @@ app.add_middleware(
 )
 
 
-VIDEO_DIR = Path("/Users/asilbekturgunboev/Desktop/video_conversion/converted_videos/861137dd-802c-4c29-a6d0-c4507b6ca951")
+VIDEO_DIR = Path(
+    "/Users/asilbekturgunboev/Desktop/video_conversion/converted_videos/")
 
-@app.get("/videos/{video_path:path}")
-def read_video(video_path: str):
-    file_location = VIDEO_DIR / video_path
+
+@app.get("/videos/{video_id:uuid}/{video_path:path}")
+def read_video(video_id: UUID, video_path: str):
+    file_location = VIDEO_DIR / str(video_id) / video_path
     print(f"Trying to access file at: {file_location}")
     if file_location.exists() and file_location.is_file():
         return FileResponse(file_location)

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Search</title>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+
+<h1>Real-time Search</h1>
+
+<input type="text" id="searchInput" placeholder="Start typing to search...">
+<div id="results"></div>
+
+<script>
+  $(document).ready(function(){
+    $("#searchInput").on("input", function() {
+      let query = $(this).val();
+      if(query.length > 0) {
+        $.get("/search/", { q: query }, function(data) {
+          let movies = data.movies.join(", ");
+          let series = data.series.join(", ");
+          $("#results").html("<strong>Movies:</strong> " + movies + "<br><strong>Series:</strong> " + series);
+        });
+      } else {
+        $("#results").empty();
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

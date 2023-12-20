@@ -1,0 +1,324 @@
+openapi: "3.0.0"
+info:
+  title: "Panda API"
+  description: "API documentation for Panda movie streaming services."
+  version: "1.0.0"
+servers:
+  - url: "https://authservice.inminternation.uz"
+    description: "Authentication and Authorization Service"
+  - url: "https://catalogservice.inminternational.uz"
+    description: "Catalog Service"
+
+paths:
+  /auth/register:
+    post:
+      summary: "Register User"
+      description: "Endpoint to register a new user with username, phone number, and password."
+      tags:
+        - Authentication and Authorization Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                phone_number:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: "Standard response indicating the success or failure of the registration."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardResponse"
+
+  /auth/login:
+    post:
+      summary: "Login User"
+      description: "Endpoint to login user with username and password."
+      tags:
+        - Authentication and Authorization Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: "Standard response containing an access token upon successful login."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardResponse"
+
+  /auth/logout:
+    post:
+      summary: "Logout User"
+      description: "Endpoint to log out a user."
+      tags:
+        - Authentication and Authorization Service
+      responses:
+        "200":
+          description: "Standard response indicating the success or failure of the logout operation."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardResponse"
+
+  /auth/verify-token:
+    get:
+      summary: "Verify Token"
+      description: "Endpoint to verify the token."
+      tags:
+        - Authentication and Authorization Service
+      responses:
+        "200":
+          description: "Standard response indicating the validity of the token, along with the username associated with the token."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StandardResponse"
+
+  /genres:
+    get:
+      summary: "List all genres with pagination"
+      tags:
+        - Catalog Service
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The page number (optional)"
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The number of items per page (optional)"
+      responses:
+        "200":
+          description: "Successfully retrieved list of genres"
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /directors:
+    get:
+      summary: "List all directors with pagination"
+      tags:
+        - Catalog Service
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The page number (optional)"
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The number of items per page (optional)"
+      responses:
+        "200":
+          description: "Successfully retrieved list of directors"
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /movies:
+    get:
+      summary: "List all movies or movies filtered by genre with pagination"
+      tags:
+        - Catalog Service
+      parameters:
+        - name: genre
+          in: query
+          schema:
+            type: string
+          required: false
+          description: "The ID of the genre (optional)"
+        - name: page
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The page number (optional)"
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The number of items per page (optional)"
+      responses:
+        "200":
+          description: "Successfully retrieved list of movies"
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /series:
+    get:
+      summary: "List all series or series filtered by genre with pagination"
+      tags:
+        - Catalog Service
+      parameters:
+        - name: genre
+          in: query
+          schema:
+            type: string
+          required: false
+          description: "The ID of the genre (optional)"
+        - name: page
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The page number (optional)"
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The number of items per page (optional)"
+      responses:
+        "200":
+          description: "Successfully retrieved list of series"
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /series/{series_id}/seasons:
+    get:
+      summary: "List all seasons or seasons of a specific series with pagination"
+      tags:
+        - Catalog Service
+      parameters:
+        - name: series_id
+          in: path
+          schema:
+            type: string
+          required: true
+          description: "The ID of the series"
+        - name: page
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The page number (optional)"
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The number of items per page (optional)"
+      responses:
+        "200":
+          description: "Successfully retrieved list of seasons"
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /series/{series_id}/seasons/{season_id}/episodes:
+    get:
+      summary: "List all episodes or episodes of a specific season of a series with pagination"
+      tags:
+        - Catalog Service
+      parameters:
+        - name: series_id
+          in: path
+          schema:
+            type: string
+          required: true
+          description: "The ID of the series"
+        - name: season_id
+          in: path
+          schema:
+            type: string
+          required: true
+          description: "The ID of the season"
+        - name: page
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The page number (optional)"
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The number of items per page (optional)"
+      responses:
+        "200":
+          description: "Successfully retrieved list of episodes"
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /banners:
+    get:
+      summary: "List all active banners with pagination"
+      tags:
+        - Catalog Service
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The page number (optional)"
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+          required: false
+          description: "The number of items per page (optional)"
+      responses:
+        "200":
+          description: "Successfully retrieved list of active banners"
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  schemas:
+    StandardResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+#   securitySchemes:
+#     bearerAuth:
+#       type: http
+#       scheme: bearer
+#       bearerFormat: JWT
+
+# security:
+#   - bearerAuth: []

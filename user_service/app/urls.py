@@ -18,6 +18,12 @@ router.add_api_route(
 )
 
 router.add_api_route(
+    path="/statistics",
+    endpoint=views.get_statistics,
+    methods=['GET']
+)
+
+router.add_api_route(
     path="/users",
     endpoint=views.update_profile,
     methods=['PUT']
@@ -27,4 +33,10 @@ router.add_api_route(
     path="/users",
     endpoint=views.delete_profile,
     methods=['DELETE']
+)
+
+router.add_api_route(
+    path="/allusers",
+    endpoint=views.get_all_users,
+    methods=['GET']
 )
