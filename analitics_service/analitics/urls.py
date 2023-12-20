@@ -3,6 +3,7 @@ from .views import (
     AverageSessionLengthView,
     BannerView,
     ContentLikesCountView,
+    LikeUnlikeContentView,
     MostWatchedContentView,
     PeakViewingTimesView,
     StreamingQualityDataView,
@@ -28,8 +29,8 @@ urlpatterns = [
     path('user-activity/', UserActivityView.as_view(), name='user_activity'),
     path('review/', ReviewView.as_view(), name='review'),
 
-    path('content-likes-count/<int:content_id>/',
-         ContentLikesCountView.as_view(), name='content_likes_count'),
+    path('content-likes-count/<int:content_id>/<content_type>/',
+         ContentLikesCountView.as_view(), name='content-likes-count'),
     path('most-watched/', MostWatchedContentView.as_view(),
          name='most_watched_content'),
     path('average-session-length/', AverageSessionLengthView.as_view(),
@@ -64,4 +65,7 @@ urlpatterns = [
     path('all-users-statistics/',
          UserStatisticsView.as_view(), name='user-statistics'),
     path('banners/', BannerView.as_view(), name='banners'),
+    path('like-unlike-content/', LikeUnlikeContentView.as_view(),
+         name='like-unlike-content'),
+
 ]

@@ -17,7 +17,15 @@ class UserWatchDataView(APIView):
     def post(self, request):
         serializer = UserWatchDataSerializer(data=request.data)
         if serializer.is_valid():
-            save_watch_data.delay(**serializer.validated_data)
+            valid_data = serializer.validated_data
+
+            # Remove 'fully_watched' from valid_data if it exists
+            user_id = valid_data.get('user_id', None)
+            content_id = valid_data.get('content_id', None)
+            watch_duration = valid_data.get('watch_duration', None)
+            # Call the Celery task with the correct data
+            save_watch_data.delay(
+                user_id=user_id, content_id=content_id, watch_duration=watch_duration)
             return standard_response(True, 'User watch data is being processed')
         return standard_response(False, 'Invalid data', serializer.errors, status.HTTP_400_BAD_REQUEST)
 
@@ -38,15 +46,6 @@ class ReviewView(APIView):
             add_review.delay(**serializer.validated_data)
             return standard_response(True, 'Review is being processed')
         return standard_response(False, 'Invalid data', serializer.errors, status.HTTP_400_BAD_REQUEST)
-
-
-class ContentLikesCountView(APIView):
-    def get(self, request, content_id):
-        likes_count = UserActivity.objects.filter(
-            content_id=content_id,
-            activity_type=ActivityType.LIKED
-        ).count()
-        return standard_response(True, 'Likes count retrieved', {'likes_count': likes_count})
 
 
 class MostWatchedContentView(APIView):
@@ -375,18 +374,50 @@ class BannerView(APIView):
 
 
 class UserWatchHistoryView(APIView):
-    pagination_class = StandardResultsSetPagination
-
     def get(self, request, user_id):
         watch_history = UserWatchData.objects.filter(
             user_id=user_id).order_by('-timestamp')
 
-        # Apply pagination
-        page = self.pagination_class().paginate_queryset(watch_history, request)
+        # Instantiate your pagination class
+        paginator = StandardResultsSetPagination()
+
+        # Get the paginated queryset
+        page = paginator.paginate_queryset(watch_history, request)
+
         if page is not None:
             serializer = UserWatchDataSerializer(page, many=True)
-            return self.pagination_class().get_paginated_response(serializer.data)
+            return paginator.get_paginated_response(serializer.data)
 
-        # Fallback if pagination is not applicable
+        # Fallback for non-paginated response
         serializer = UserWatchDataSerializer(watch_history, many=True)
         return Response(serializer.data)
+
+
+class LikeUnlikeContentView(APIView):
+    def post(self, request):
+        serializer = UserActivitySerializer(data=request.data)
+        if serializer.is_valid():
+            user_id = serializer.validated_data['user_id']
+            content_id = serializer.validated_data['content_id']
+            content_type = serializer.validated_data['content_type']
+            like = serializer.validated_data['like']  # Boolean
+
+            activity_type = ActivityType.LIKED if like else ActivityType.UNLIKED
+            UserActivity.objects.update_or_create(
+                user_id=user_id,
+                content_id=content_id,
+                content_type=content_type,
+                defaults={'activity_type': activity_type}
+            )
+            return standard_response(True, 'User activity updated')
+        return standard_response(False, 'Invalid data', serializer.errors)
+
+
+class ContentLikesCountView(APIView):
+    def get(self, request, content_id, content_type):
+        likes_count = UserActivity.objects.filter(
+            content_id=content_id,
+            content_type=content_type,
+            activity_type=ActivityType.LIKED
+        ).count()
+        return standard_response(True, 'Likes count retrieved', {'likes_count': likes_count})

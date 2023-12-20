@@ -4,6 +4,7 @@ from django.db import models
 class ActivityType(models.TextChoices):
     WATCHED = 'watched', 'Watched'
     LIKED = 'liked', 'Liked'
+    UNLIKED = 'unliked', 'Unliked'
     SHARED = 'shared', 'Shared'
 
 
@@ -48,11 +49,13 @@ class UserActivity(models.Model):
         max_length=100, choices=ActivityType.choices)
     timestamp = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    device_type = models.CharField(max_length=100)
-    location = models.CharField(max_length=100)
-    platform = models.CharField(max_length=100)
+    device_type = models.CharField(max_length=100, blank=True, null=True)
+    location = models.CharField(max_length=100, blank=True, null=True)
+    platform = models.CharField(max_length=100, blank=True, null=True)
     playback_position = models.IntegerField(
-        help_text="Playback position in seconds")
+        help_text="Playback position in seconds", blank=True, null=True)
+    content_type = models.CharField(max_length=100, choices=[
+                                    ('movie', 'MOVIE'), ('series', 'SERIES')])
 
     def __str__(self):
         return f"User {self.user_id} - {self.activity_type} - Content {self.content_id}"
